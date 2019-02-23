@@ -1,8 +1,7 @@
 package authentication
 
 type PiwigoConfig struct {
-	url string
+	url      string
 	username string
 	password string
 }
-

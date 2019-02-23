@@ -14,24 +14,24 @@ func ScanLocalDirectories(root string) {
 	logrus.Debugln("filepath.Walk() returned %v\n", fileNodes)
 }
 
-func GetAllCategoriesFromServer()  {
+func GetAllCategoriesFromServer() {
 	// get all categories from server and flatten structure to match directory names
 	// 2018/2018 album blah
 	logrus.Warnln("Loading all categories from the server (NotImplemented)")
 }
 
-func FindMissingAlbums()  {
+func FindMissingAlbums() {
 	logrus.Warnln("Looking up missing albums (NotImplemented)")
 }
 
-func CreateMissingAlbums()  {
+func CreateMissingAlbums() {
 	logrus.Warnln("Creating missing albums (NotImplemented)")
 }
 
-func FindMissingImages()  {
+func FindMissingImages() {
 	logrus.Warnln("Finding missing images (NotImplemented)")
 }
 
-func UploadImages()  {
+func UploadImages() {
 	logrus.Warnln("Uploading missing images (NotImplemented)")
 }

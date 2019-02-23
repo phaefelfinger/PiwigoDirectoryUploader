@@ -16,11 +16,11 @@ func ScanLocalFileStructure(path string) map[string]FileNode {
 		//TODO: Only allow jpg and png files here
 
 		fileMap[p] = FileNode{
-			key:p,
-			name:info.Name(),
-			isDir:info.IsDir(),
+			key:   p,
+			name:  info.Name(),
+			isDir: info.IsDir(),
 		}
-		return nil;
+		return nil
 	})
 
 	if err != nil {

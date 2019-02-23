@@ -1,7 +1,7 @@
 package category
 
 type PiwigoCategory struct {
-	id int
+	id   int
 	name string
-	key string
+	key  string
 }
