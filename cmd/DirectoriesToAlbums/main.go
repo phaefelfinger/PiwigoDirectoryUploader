@@ -9,18 +9,11 @@ import (
 
 func main() {
 	flag.Parse()
-	root := flag.Arg(0)
+	rootPath := flag.Arg(0)
 
 	InitializeLog()
 
-	app.AuthenticateToPiwigo()
-	app.ScanLocalDirectories(root)
-	app.GetAllCategoriesFromServer()
-	app.FindMissingAlbums()
-	app.CreateMissingAlbums()
-	app.FindMissingImages()
-	app.UploadImages()
-
+	app.Run(rootPath)
 }
 
 func InitializeLog() {

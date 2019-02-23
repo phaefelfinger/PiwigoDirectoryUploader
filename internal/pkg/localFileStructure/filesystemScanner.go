@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 )
 
-func ScanLocalFileStructure(path string) map[string]FileNode {
-	fileMap := make(map[string]FileNode)
+func ScanLocalFileStructure(path string) map[string]FilesystemNode {
+	fileMap := make(map[string]FilesystemNode)
 
 	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
 		if path == p {
@@ -15,10 +15,10 @@ func ScanLocalFileStructure(path string) map[string]FileNode {
 
 		//TODO: Only allow jpg and png files here
 
-		fileMap[p] = FileNode{
-			key:   p,
-			name:  info.Name(),
-			isDir: info.IsDir(),
+		fileMap[p] = FilesystemNode{
+			Key:   p,
+			Name:  info.Name(),
+			IsDir: info.IsDir(),
 		}
 		return nil
 	})
