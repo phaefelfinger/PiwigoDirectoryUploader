@@ -2,9 +2,9 @@ package authentication
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"go/types"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -43,7 +43,7 @@ func Login(context *PiwigoContext) error {
 	if loginResponse.Status != "ok" {
 		errorMessage := fmt.Sprintf("Login failed: %d - %s", loginResponse.ErrorNumber, loginResponse.Message)
 		logrus.Errorln(errorMessage)
-		return types.Error{Msg: errorMessage}
+		return errors.New(errorMessage)
 	}
 
 	logrus.Infof("Login succeeded: %s", loginResponse.Status)
@@ -106,7 +106,7 @@ func GetStatus(context *PiwigoContext) (*GetStatusResponse, error) {
 	if statusResponse.Status != "ok" {
 		errorMessage := fmt.Sprintf("Could not get session state from %s", context.Url)
 		logrus.Errorln(errorMessage)
-		return nil, types.Error{Msg: errorMessage}
+		return nil, errors.New(errorMessage)
 	}
 
 	return &statusResponse, nil

@@ -1,21 +1,26 @@
 package app
 
 import (
+	"errors"
 	"flag"
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/authentication"
+	"os"
 )
 
 var (
-	imagesRootPath =  flag.String("imagesRootPath", "", "This is the images root path that should be mirrored to piwigo.")
-	piwigoUrl      =  flag.String("piwigoUrl", "", "The root url to your piwigo installation.")
-	piwigoUser     =  flag.String("piwigoUser", "", "The username to use during sync.")
-	piwigoPassword =  flag.String("piwigoPassword", "", "This is password to the given username.")
+	imagesRootPath = flag.String("imagesRootPath", "", "This is the images root path that should be mirrored to piwigo.")
+	piwigoUrl      = flag.String("piwigoUrl", "", "The root url to your piwigo installation.")
+	piwigoUser     = flag.String("piwigoUser", "", "The username to use during sync.")
+	piwigoPassword = flag.String("piwigoPassword", "", "This is password to the given username.")
 )
 
 func Run() {
-	context := configureContext()
+	context, err := configureContext()
+	if err != nil {
+		os.Exit(1)
+	}
 
 	loginToPiwigoAndConfigureContext(context)
 
@@ -62,8 +67,20 @@ func UploadImages() {
 	logrus.Warnln("Uploading missing images (NotImplemented)")
 }
 
-func configureContext() *AppContext {
+func configureContext() (*AppContext, error) {
 	logrus.Infoln("Preparing application context and configuration")
+
+	if *piwigoUrl == "" {
+		return nil, errors.New("missing piwigo url!")
+	}
+
+	if *piwigoUser == "" {
+		return nil, errors.New("missing piwigo user!")
+	}
+
+	if *piwigoPassword == "" {
+		return nil, errors.New("missing piwigo password!")
+	}
 
 	context := new(AppContext)
 	context.LocalRootPath = *imagesRootPath
@@ -72,7 +89,7 @@ func configureContext() *AppContext {
 	context.Piwigo.Username = *piwigoUser
 	context.Piwigo.Password = *piwigoPassword
 
-	return context
+	return context, nil
 }
 
 func loginToPiwigoAndConfigureContext(context *AppContext) {
