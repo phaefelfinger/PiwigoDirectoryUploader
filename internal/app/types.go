@@ -1,9 +1,11 @@
 package app
 
-import "haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/authentication"
+import (
+	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
+)
 
 type AppContext struct {
-	Piwigo         *authentication.PiwigoContext
+	Piwigo         *piwigo.PiwigoContext
 	SessionId      string
 	LocalRootPath  string
 	ChunkSizeBytes int

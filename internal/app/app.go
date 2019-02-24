@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
+	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/authentication"
+	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
 	"os"
 )
 
@@ -28,7 +30,8 @@ func Run() {
 		os.Exit(2)
 	}
 	//ScanLocalDirectories(context)
-	//GetAllCategoriesFromServer()
+
+	GetAllCategoriesFromServer(context)
 
 	//FindMissingAlbums()
 	//CreateMissingAlbums()
@@ -48,10 +51,13 @@ func ScanLocalDirectories(context *AppContext) {
 	}
 }
 
-func GetAllCategoriesFromServer() {
-	// get all categories from server and flatten structure to match directory names
-	// 2018/2018 album blah
-	logrus.Warnln("Loading all categories from the server (NotImplemented)")
+func GetAllCategoriesFromServer(context *AppContext) {
+
+	err := category.GetAllCategories(context.Piwigo)
+	if err != nil {
+		os.Exit(3)
+	}
+
 }
 
 func FindMissingAlbums() {
@@ -87,7 +93,7 @@ func configureContext() (*AppContext, error) {
 
 	context := new(AppContext)
 	context.LocalRootPath = *imagesRootPath
-	context.Piwigo = new(authentication.PiwigoContext)
+	context.Piwigo = new(piwigo.PiwigoContext)
 	context.Piwigo.Url = fmt.Sprintf("%s/ws.php?format=json", *piwigoUrl)
 	context.Piwigo.Username = *piwigoUser
 	context.Piwigo.Password = *piwigoPassword

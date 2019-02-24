@@ -1,14 +1,5 @@
 package authentication
 
-import "net/http/cookiejar"
-
-type PiwigoContext struct {
-	Url      string
-	Username string
-	Password string
-	Cookies  *cookiejar.Jar
-}
-
 type LoginResponse struct {
 	Status      string `json:"stat"`
 	Result      bool   `json:"result"`

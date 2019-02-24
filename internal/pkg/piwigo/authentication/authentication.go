@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"strings"
 )
 
-func Login(context *PiwigoContext) error {
+func Login(context *piwigo.PiwigoContext) error {
 	logrus.Debugf("Logging in to %s using user %s", context.Url, context.Username)
 
 	if !strings.HasPrefix(context.Url, "https") {
@@ -50,7 +51,7 @@ func Login(context *PiwigoContext) error {
 	return nil
 }
 
-func Logout(context *PiwigoContext) error {
+func Logout(context *piwigo.PiwigoContext) error {
 	logrus.Debugf("Logging out from %s", context.Url)
 
 	initializeCookieJarIfRequired(context)
@@ -80,7 +81,7 @@ func Logout(context *PiwigoContext) error {
 	return nil
 }
 
-func GetStatus(context *PiwigoContext) (*GetStatusResponse, error) {
+func GetStatus(context *piwigo.PiwigoContext) (*GetStatusResponse, error) {
 
 	logrus.Debugln("Getting current login state...")
 
@@ -112,7 +113,7 @@ func GetStatus(context *PiwigoContext) (*GetStatusResponse, error) {
 	return &statusResponse, nil
 }
 
-func initializeCookieJarIfRequired(context *PiwigoContext) {
+func initializeCookieJarIfRequired(context *piwigo.PiwigoContext) {
 	if context.Cookies != nil {
 		return
 	}
