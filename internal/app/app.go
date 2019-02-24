@@ -19,11 +19,14 @@ func Run(rootPath string) {
 	//FindMissingImages()
 	//UploadImages()
 
-	authentication.Logout(context.Piwigo)
+	_ = authentication.Logout(context.Piwigo)
 }
 
 func ScanLocalDirectories(context *AppContext) {
-	var fileNodes map[string]localFileStructure.FilesystemNode = localFileStructure.ScanLocalFileStructure(context.LocalRootPath)
+	fileNodes, err := localFileStructure.ScanLocalFileStructure(context.LocalRootPath)
+	if err != nil {
+		panic(err)
+	}
 	for _, node := range fileNodes {
 		logrus.Debugln("found path entry:", node.Key)
 	}
@@ -69,12 +72,18 @@ func configureContext(rootPath string) *AppContext {
 
 func loginToPiwigoAndConfigureContext(context *AppContext) {
 	logrus.Infoln("Logging in to piwigo and getting chunk size configuration for uploads")
-	authentication.Login(context.Piwigo)
+	err := authentication.Login(context.Piwigo)
+	if err != nil {
+		panic(err)
+	}
 	initializeUploadChunkSize(context)
 }
 
 func initializeUploadChunkSize(context *AppContext) {
-	userStatus := authentication.GetStatus(context.Piwigo)
+	userStatus, err := authentication.GetStatus(context.Piwigo)
+	if err != nil {
+		panic(err)
+	}
 	context.ChunkSizeBytes = userStatus.Result.UploadFormChunkSize * 1024
 	logrus.Debugln(context.ChunkSizeBytes)
 }

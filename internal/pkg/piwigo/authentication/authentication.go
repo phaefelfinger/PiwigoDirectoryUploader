@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"go/types"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"strings"
 )
 
-func Login(context *PiwigoContext) {
+func Login(context *PiwigoContext) error {
 	logrus.Debugf("Logging in to %s using user %s", context.Url, context.Username)
 
 	if !strings.HasPrefix(context.Url, "https") {
@@ -29,26 +30,27 @@ func Login(context *PiwigoContext) {
 	response, err := client.PostForm(context.Url, formData)
 
 	if err != nil {
-		logrus.Errorln("The HTTP request failed with error %s", err)
-		panic(err)
+		logrus.Errorf("The HTTP request failed with error %s", err)
+		return err
 	}
 
 	var loginResponse LoginResponse
 	if err := json.NewDecoder(response.Body).Decode(&loginResponse); err != nil {
 		logrus.Errorln(err)
-		panic(err)
+		return err
 	}
 
 	if loginResponse.Status != "ok" {
 		errorMessage := fmt.Sprintf("Login failed: %d - %s", loginResponse.ErrorNumber, loginResponse.Message)
-		logrus.Errorf(errorMessage)
-		panic(errorMessage)
+		logrus.Errorln(errorMessage)
+		return types.Error{Msg: errorMessage}
 	}
 
 	logrus.Infof("Login succeeded: %s", loginResponse.Status)
+	return nil
 }
 
-func Logout(context *PiwigoContext) {
+func Logout(context *PiwigoContext) error {
 	logrus.Debugf("Logging out from %s", context.Url)
 
 	initializeCookieJarIfRequired(context)
@@ -61,7 +63,7 @@ func Logout(context *PiwigoContext) {
 
 	if err != nil {
 		logrus.Errorln("The HTTP request failed with error %s", err)
-		return
+		return err
 	}
 
 	var statusResponse LogoutResponse
@@ -74,9 +76,11 @@ func Logout(context *PiwigoContext) {
 	} else {
 		logrus.Infof("Successfully logged out from %s", context.Url)
 	}
+
+	return nil
 }
 
-func GetStatus(context *PiwigoContext) *GetStatusResponse {
+func GetStatus(context *PiwigoContext) (*GetStatusResponse, error) {
 
 	logrus.Debugln("Getting current login state...")
 
@@ -90,19 +94,22 @@ func GetStatus(context *PiwigoContext) *GetStatusResponse {
 
 	if err != nil {
 		logrus.Errorln("The HTTP request failed with error %s\n", err)
-		return nil
+		return nil, err
 	}
 
 	var statusResponse GetStatusResponse
 	if err := json.NewDecoder(response.Body).Decode(&statusResponse); err != nil {
 		logrus.Errorln(err)
+		return nil, err
 	}
 
 	if statusResponse.Status != "ok" {
-		logrus.Errorf("Could not get session state from %s", context.Url)
+		errorMessage := fmt.Sprintf("Could not get session state from %s", context.Url)
+		logrus.Errorln(errorMessage)
+		return nil, types.Error{Msg: errorMessage}
 	}
 
-	return &statusResponse
+	return &statusResponse, nil
 }
 
 func initializeCookieJarIfRequired(context *PiwigoContext) {

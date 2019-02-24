@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-func ScanLocalFileStructure(path string) map[string]FilesystemNode {
+func ScanLocalFileStructure(path string) (map[string]FilesystemNode,error){
 	fileMap := make(map[string]FilesystemNode)
 
 	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
@@ -24,8 +24,8 @@ func ScanLocalFileStructure(path string) map[string]FilesystemNode {
 	})
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return fileMap
+	return fileMap, nil
 }
