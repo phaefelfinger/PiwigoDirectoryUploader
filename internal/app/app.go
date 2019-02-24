@@ -22,8 +22,10 @@ func Run() {
 		os.Exit(1)
 	}
 
-	loginToPiwigoAndConfigureContext(context)
-
+	err = loginToPiwigoAndConfigureContext(context)
+	if err != nil {
+		os.Exit(2)
+	}
 	//ScanLocalDirectories(context)
 	//GetAllCategoriesFromServer()
 
@@ -92,20 +94,21 @@ func configureContext() (*AppContext, error) {
 	return context, nil
 }
 
-func loginToPiwigoAndConfigureContext(context *AppContext) {
+func loginToPiwigoAndConfigureContext(context *AppContext) error {
 	logrus.Infoln("Logging in to piwigo and getting chunk size configuration for uploads")
 	err := authentication.Login(context.Piwigo)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	initializeUploadChunkSize(context)
+	return initializeUploadChunkSize(context)
 }
 
-func initializeUploadChunkSize(context *AppContext) {
+func initializeUploadChunkSize(context *AppContext) error {
 	userStatus, err := authentication.GetStatus(context.Piwigo)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	context.ChunkSizeBytes = userStatus.Result.UploadFormChunkSize * 1024
 	logrus.Debugln(context.ChunkSizeBytes)
+	return nil
 }
