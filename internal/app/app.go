@@ -1,13 +1,21 @@
 package app
 
 import (
+	"flag"
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/authentication"
 )
 
-func Run(rootPath string) {
-	context := configureContext(rootPath)
+var (
+	imagesRootPath =  flag.String("imagesRootPath", "", "This is the images root path that should be mirrored to piwigo.")
+	piwigoUrl      =  flag.String("piwigoUrl", "", "The root url to your piwigo installation.")
+	piwigoUser     =  flag.String("piwigoUser", "", "The username to use during sync.")
+	piwigoPassword =  flag.String("piwigoPassword", "", "This is password to the given username.")
+)
+
+func Run() {
+	context := configureContext()
 
 	loginToPiwigoAndConfigureContext(context)
 
@@ -54,18 +62,15 @@ func UploadImages() {
 	logrus.Warnln("Uploading missing images (NotImplemented)")
 }
 
-func configureContext(rootPath string) *AppContext {
+func configureContext() *AppContext {
 	logrus.Infoln("Preparing application context and configuration")
 
 	context := new(AppContext)
-	context.LocalRootPath = rootPath
+	context.LocalRootPath = *imagesRootPath
 	context.Piwigo = new(authentication.PiwigoContext)
-
-	//TODO: Move this values to configuration files
-	//No, these are not real credentials :-P
-	context.Piwigo.Url = "http://pictures.haefelfinger.net/ws.php?format=json"
-	context.Piwigo.Username = "admin"
-	context.Piwigo.Password = "asdf"
+	context.Piwigo.Url = *piwigoUrl
+	context.Piwigo.Username = *piwigoUser
+	context.Piwigo.Password = *piwigoPassword
 
 	return context
 }

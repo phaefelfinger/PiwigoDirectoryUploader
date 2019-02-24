@@ -1,19 +1,18 @@
 package main
 
 import (
-	"flag"
 	"github.com/sirupsen/logrus"
+	"github.com/vharitonsky/iniflags"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/app"
 	"os"
 )
 
 func main() {
-	flag.Parse()
-	rootPath := flag.Arg(0)
+	iniflags.Parse()
 
 	InitializeLog()
 
-	app.Run(rootPath)
+	app.Run()
 }
 
 func InitializeLog() {
