@@ -14,7 +14,7 @@ func Login(context *PiwigoContext) {
 
 	logrus.Debugf("Logging in to %s using user %s", context.Url, context.Username)
 
-	if !strings.HasPrefix(context.Url,"https") {
+	if !strings.HasPrefix(context.Url, "https") {
 		logrus.Warnf("The server url %s does not use https! Credentials are not encrypted!", context.Url)
 	}
 

@@ -7,7 +7,7 @@ import (
 )
 
 func Run(rootPath string) {
-	context := ConfigureContext(rootPath)
+	context := configureContext(rootPath)
 
 	loginToPiwigoAndConfigureContext(context)
 
@@ -20,22 +20,6 @@ func Run(rootPath string) {
 	//UploadImages()
 
 	authentication.Logout(context.Piwigo)
-}
-
-func ConfigureContext(rootPath string) *AppContext {
-	logrus.Infoln("Preparing application context and configuration")
-
-	context := new(AppContext)
-	context.LocalRootPath = rootPath
-	context.Piwigo = new(authentication.PiwigoContext)
-
-	//TODO: Move this values to configuration files
-	//No, these are not real credentials :-P
-	context.Piwigo.Url = "http://pictures.haefelfinger.net/ws.php?format=json"
-	context.Piwigo.Username = "admin"
-	context.Piwigo.Password = "asdf"
-
-	return context
 }
 
 func ScanLocalDirectories(context *AppContext) {
@@ -65,6 +49,22 @@ func FindMissingImages() {
 
 func UploadImages() {
 	logrus.Warnln("Uploading missing images (NotImplemented)")
+}
+
+func configureContext(rootPath string) *AppContext {
+	logrus.Infoln("Preparing application context and configuration")
+
+	context := new(AppContext)
+	context.LocalRootPath = rootPath
+	context.Piwigo = new(authentication.PiwigoContext)
+
+	//TODO: Move this values to configuration files
+	//No, these are not real credentials :-P
+	context.Piwigo.Url = "http://pictures.haefelfinger.net/ws.php?format=json"
+	context.Piwigo.Username = "admin"
+	context.Piwigo.Password = "asdf"
+
+	return context
 }
 
 func loginToPiwigoAndConfigureContext(context *AppContext) {
