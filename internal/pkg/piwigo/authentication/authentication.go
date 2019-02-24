@@ -11,7 +11,6 @@ import (
 )
 
 func Login(context *PiwigoContext) {
-
 	logrus.Debugf("Logging in to %s using user %s", context.Url, context.Username)
 
 	if !strings.HasPrefix(context.Url, "https") {
@@ -29,22 +28,24 @@ func Login(context *PiwigoContext) {
 
 	response, err := client.PostForm(context.Url, formData)
 
-	if err == nil {
-		var loginResponse LoginResponse
-		if err := json.NewDecoder(response.Body).Decode(&loginResponse); err != nil {
-			logrus.Errorln(err)
-		}
-
-		if loginResponse.Status != "ok" {
-			errorMessage := fmt.Sprintf("Login failed: %d - %s", loginResponse.ErrorNumber, loginResponse.Message)
-			logrus.Errorf(errorMessage)
-			panic(errorMessage)
-		}
-
-		logrus.Infof("Login succeeded: %s", loginResponse.Status)
-	} else {
+	if err != nil {
 		logrus.Errorln("The HTTP request failed with error %s", err)
+		panic(err)
 	}
+
+	var loginResponse LoginResponse
+	if err := json.NewDecoder(response.Body).Decode(&loginResponse); err != nil {
+		logrus.Errorln(err)
+		panic(err)
+	}
+
+	if loginResponse.Status != "ok" {
+		errorMessage := fmt.Sprintf("Login failed: %d - %s", loginResponse.ErrorNumber, loginResponse.Message)
+		logrus.Errorf(errorMessage)
+		panic(errorMessage)
+	}
+
+	logrus.Infof("Login succeeded: %s", loginResponse.Status)
 }
 
 func Logout(context *PiwigoContext) {
@@ -58,19 +59,20 @@ func Logout(context *PiwigoContext) {
 	client := http.Client{Jar: context.Cookies}
 	response, err := client.PostForm(context.Url, formData)
 
-	if err == nil {
-		var statusResponse LogoutResponse
-		if err := json.NewDecoder(response.Body).Decode(&statusResponse); err != nil {
-			logrus.Errorln(err)
-		}
-
-		if statusResponse.Status == "ok" {
-			logrus.Infof("Successfully logged out from %s", context.Url)
-		} else {
-			logrus.Errorf("Logout from %s failed", context.Url)
-		}
-	} else {
+	if err != nil {
 		logrus.Errorln("The HTTP request failed with error %s", err)
+		return
+	}
+
+	var statusResponse LogoutResponse
+	if err := json.NewDecoder(response.Body).Decode(&statusResponse); err != nil {
+		logrus.Errorln(err)
+	}
+
+	if statusResponse.Status != "ok" {
+		logrus.Errorf("Logout from %s failed", context.Url)
+	} else {
+		logrus.Infof("Successfully logged out from %s", context.Url)
 	}
 }
 
@@ -86,21 +88,21 @@ func GetStatus(context *PiwigoContext) *GetStatusResponse {
 	client := http.Client{Jar: context.Cookies}
 	response, err := client.PostForm(context.Url, formData)
 
-	if err == nil {
-		var statusResponse GetStatusResponse
-		if err := json.NewDecoder(response.Body).Decode(&statusResponse); err != nil {
-			logrus.Errorln(err)
-		}
-
-		if statusResponse.Status != "ok" {
-			logrus.Errorf("Could not get session state from %s", context.Url)
-		}
-
-		return &statusResponse
-	} else {
+	if err != nil {
 		logrus.Errorln("The HTTP request failed with error %s\n", err)
+		return nil
 	}
-	return nil
+
+	var statusResponse GetStatusResponse
+	if err := json.NewDecoder(response.Body).Decode(&statusResponse); err != nil {
+		logrus.Errorln(err)
+	}
+
+	if statusResponse.Status != "ok" {
+		logrus.Errorf("Could not get session state from %s", context.Url)
+	}
+
+	return &statusResponse
 }
 
 func initializeCookieJarIfRequired(context *PiwigoContext) {
