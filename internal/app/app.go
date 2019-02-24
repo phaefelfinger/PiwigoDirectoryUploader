@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/authentication"
@@ -11,7 +12,7 @@ import (
 
 var (
 	imagesRootPath = flag.String("imagesRootPath", "", "This is the images root path that should be mirrored to piwigo.")
-	piwigoUrl      = flag.String("piwigoUrl", "", "The root url to your piwigo installation.")
+	piwigoUrl      = flag.String("piwigoUrl", "", "The root url without tailing slash to your piwigo installation.")
 	piwigoUser     = flag.String("piwigoUser", "", "The username to use during sync.")
 	piwigoPassword = flag.String("piwigoPassword", "", "This is password to the given username.")
 )
@@ -87,7 +88,7 @@ func configureContext() (*AppContext, error) {
 	context := new(AppContext)
 	context.LocalRootPath = *imagesRootPath
 	context.Piwigo = new(authentication.PiwigoContext)
-	context.Piwigo.Url = *piwigoUrl
+	context.Piwigo.Url = fmt.Sprintf("%s/ws.php?format=json", *piwigoUrl)
 	context.Piwigo.Username = *piwigoUser
 	context.Piwigo.Password = *piwigoPassword
 
