@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
@@ -48,10 +49,20 @@ func createMissingCategories(missingCategories []string, existingCategories map[
 	// in the right order and we have the parent available while creating the children
 	sort.Strings(missingCategories)
 
-	logrus.Warnln("Creating missing albums (NotImplemented)")
 	for _, c := range missingCategories {
-		logrus.Debug(c)
+		logrus.Infof("Creating category %s",c)
+
+		// create category on piwigo
+
+		// build new map entry
+
+		// get parent entry by path
+		// set parent entry id
+
+		// calculate new map key
+		// add to existing map
+
 	}
 
-	return nil
+	return errors.New("NOT IMPLEMENTED")
 }

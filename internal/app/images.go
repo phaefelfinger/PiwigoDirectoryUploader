@@ -1,11 +1,14 @@
 package app
 
-import "github.com/sirupsen/logrus"
+import (
+	"errors"
+	"github.com/sirupsen/logrus"
+)
 
 func synchronizeImages() error {
 	findMissingImages()
 	uploadImages()
-	return nil
+	return errors.New("NOT IMPLEMENTED")
 }
 
 func findMissingImages() {

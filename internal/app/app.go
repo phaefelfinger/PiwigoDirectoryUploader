@@ -21,32 +21,32 @@ var (
 func Run() {
 	context, err := configureContext()
 	if err != nil {
-		os.Exit(1)
+		logErrorAndExit(err, 1)
 	}
 
 	err = loginToPiwigoAndConfigureContext(context)
 	if err != nil {
-		os.Exit(2)
+		logErrorAndExit(err, 2)
 	}
 
 	filesystemNodes, err := localFileStructure.ScanLocalFileStructure(context.LocalRootPath)
 	if err != nil {
-		os.Exit(3)
+		logErrorAndExit(err, 3)
 	}
 
 	categories, err := getAllCategoriesFromServer(context)
 	if err != nil {
-		os.Exit(4)
+		logErrorAndExit(err, 4)
 	}
 
 	err = synchronizeCategories(filesystemNodes, categories)
 	if err != nil {
-		os.Exit(5)
+		logErrorAndExit(err, 5)
 	}
 
 	err = synchronizeImages()
 	if err != nil {
-		os.Exit(6)
+		logErrorAndExit(err, 6)
 	}
 
 	_ = authentication.Logout(context.Piwigo)
@@ -94,4 +94,9 @@ func initializeUploadChunkSize(context *AppContext) error {
 	context.ChunkSizeBytes = userStatus.Result.UploadFormChunkSize * 1024
 	logrus.Debugln(context.ChunkSizeBytes)
 	return nil
+}
+
+func logErrorAndExit(err error, exitCode int) {
+	logrus.Errorln(err)
+	os.Exit(exitCode)
 }
