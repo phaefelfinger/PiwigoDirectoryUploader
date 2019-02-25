@@ -32,11 +32,11 @@ func findMissingCategories(fileSystem map[string]*localFileStructure.FilesystemN
 
 		_, exists := existingCategories[file.Key]
 
-		if !exists {
+		if exists {
+			logrus.Debugf("Found existing category %s", file.Key)
+		} else {
 			logrus.Infof("Missing category detected %s", file.Key)
 			missingCategories = append(missingCategories, file.Key)
-		} else {
-			logrus.Debugf("Found existing category %s", file.Key)
 		}
 	}
 
