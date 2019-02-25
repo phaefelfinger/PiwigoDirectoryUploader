@@ -8,6 +8,7 @@ import (
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 func GetAllCategories(context *piwigo.PiwigoContext) (map[string]*PiwigoCategory, error) {
@@ -50,7 +51,7 @@ func GetAllCategories(context *piwigo.PiwigoContext) (map[string]*PiwigoCategory
 func buildLookupMap(categories map[int]*PiwigoCategory) map[string]*PiwigoCategory {
 	categoryLookups := map[string]*PiwigoCategory{}
 	for _, category := range categories {
-		logrus.Debugf("Category %s", category.Key)
+		logrus.Debugf("Existing category %s", category.Key)
 		categoryLookups[category.Key] = category
 	}
 	return categoryLookups
@@ -75,7 +76,9 @@ func buildCategoryKeys(categories map[int]*PiwigoCategory) {
 		parentId := category.ParentId
 		for parentId != 0 {
 			parent := categories[parentId]
-			key = fmt.Sprintf("%s/%s", parent.Name, key)
+			// as we build the category as a directory hierarchy,
+			// we have to use the path separator to construct the path key
+			key = fmt.Sprintf("%s%c%s", parent.Name, os.PathSeparator, key)
 			parentId = parent.ParentId
 		}
 
