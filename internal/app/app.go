@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
+	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/matcher"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/authentication"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
@@ -29,50 +30,58 @@ func Run() {
 	if err != nil {
 		os.Exit(2)
 	}
-	//ScanLocalDirectories(context)
 
-	GetAllCategoriesFromServer(context)
+	filesystemNodes := scanLocalDirectories(context)
+	categories := getAllCategoriesFromServer(context)
 
-	//FindMissingAlbums()
-	//CreateMissingAlbums()
-	//FindMissingImages()
-	//UploadImages()
+	synchronizeCategories(filesystemNodes, categories)
+
+
+	findMissingImages()
+	uploadImages()
 
 	_ = authentication.Logout(context.Piwigo)
 }
 
-func ScanLocalDirectories(context *AppContext) {
-	fileNodes, err := localFileStructure.ScanLocalFileStructure(context.LocalRootPath)
-	if err != nil {
-		panic(err)
-	}
-	for _, node := range fileNodes {
-		logrus.Debugln("found path entry:", node.Key)
-	}
+func synchronizeCategories(filesystemNodes map[string]*localFileStructure.FilesystemNode, categories map[string]*category.PiwigoCategory) {
+	missingCategories := findMissingCategories(filesystemNodes, categories)
+	createMissingCategories(missingCategories)
 }
 
-func GetAllCategoriesFromServer(context *AppContext) {
-
-	err := category.GetAllCategories(context.Piwigo)
+func scanLocalDirectories(context *AppContext) map[string]*localFileStructure.FilesystemNode {
+	fileNodes, err := localFileStructure.ScanLocalFileStructure(context.LocalRootPath)
 	if err != nil {
 		os.Exit(3)
 	}
-
+	return fileNodes
 }
 
-func FindMissingAlbums() {
-	logrus.Warnln("Looking up missing albums (NotImplemented)")
+func getAllCategoriesFromServer(context *AppContext) map[string]*category.PiwigoCategory {
+
+	categories, err := category.GetAllCategories(context.Piwigo)
+	if err != nil {
+		os.Exit(4)
+	}
+
+	return categories
 }
 
-func CreateMissingAlbums() {
+func findMissingCategories(fileSystem map[string]*localFileStructure.FilesystemNode, categories map[string]*category.PiwigoCategory) []string {
+	return matcher.FindMissingCategories(fileSystem, categories)
+}
+
+func createMissingCategories(categories []string) {
 	logrus.Warnln("Creating missing albums (NotImplemented)")
+	for _, c := range categories  {
+		logrus.Debug(c)
+	}
 }
 
-func FindMissingImages() {
+func findMissingImages() {
 	logrus.Warnln("Finding missing images (NotImplemented)")
 }
 
-func UploadImages() {
+func uploadImages() {
 	logrus.Warnln("Uploading missing images (NotImplemented)")
 }
 
