@@ -1,6 +1,7 @@
 package localFileStructure
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -8,21 +9,26 @@ import (
 )
 
 func ScanLocalFileStructure(path string) (map[string]*FilesystemNode, error) {
+	fullPathRoot, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+
+	logrus.Infof("Scanning %s for images...", fullPathRoot)
+
 	fileMap := make(map[string]*FilesystemNode)
-
-	relativeRoot := filepath.Base(path) + "/"
-
+	fullPathReplace := fmt.Sprintf("%s%c",fullPathRoot, os.PathSeparator)
 	numberOfDirectories := 0
 	numberOfImages := 0
 
-	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-		if path == p {
+	err = filepath.Walk(fullPathRoot, func(p string, info os.FileInfo, err error) error {
+		if fullPathRoot == p {
 			return nil
 		}
 
 		//TODO: Only allow jpg and png files here
 
-		key := strings.Replace(p, relativeRoot, "", 1)
+		key := strings.Replace(p, fullPathReplace, "", 1)
 
 		fileMap[p] = &FilesystemNode{
 			Key:   key,
