@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
-	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/matcher"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/authentication"
-	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
 	"os"
 )
 
@@ -31,58 +29,27 @@ func Run() {
 		os.Exit(2)
 	}
 
-	filesystemNodes := scanLocalDirectories(context)
-	categories := getAllCategoriesFromServer(context)
-
-	synchronizeCategories(filesystemNodes, categories)
-
-
-	findMissingImages()
-	uploadImages()
-
-	_ = authentication.Logout(context.Piwigo)
-}
-
-func synchronizeCategories(filesystemNodes map[string]*localFileStructure.FilesystemNode, categories map[string]*category.PiwigoCategory) {
-	missingCategories := findMissingCategories(filesystemNodes, categories)
-	createMissingCategories(missingCategories)
-}
-
-func scanLocalDirectories(context *AppContext) map[string]*localFileStructure.FilesystemNode {
-	fileNodes, err := localFileStructure.ScanLocalFileStructure(context.LocalRootPath)
+	filesystemNodes, err := localFileStructure.ScanLocalFileStructure(context.LocalRootPath)
 	if err != nil {
 		os.Exit(3)
 	}
-	return fileNodes
-}
 
-func getAllCategoriesFromServer(context *AppContext) map[string]*category.PiwigoCategory {
-
-	categories, err := category.GetAllCategories(context.Piwigo)
+	categories, err := getAllCategoriesFromServer(context)
 	if err != nil {
 		os.Exit(4)
 	}
 
-	return categories
-}
-
-func findMissingCategories(fileSystem map[string]*localFileStructure.FilesystemNode, categories map[string]*category.PiwigoCategory) []string {
-	return matcher.FindMissingCategories(fileSystem, categories)
-}
-
-func createMissingCategories(categories []string) {
-	logrus.Warnln("Creating missing albums (NotImplemented)")
-	for _, c := range categories  {
-		logrus.Debug(c)
+	err = synchronizeCategories(filesystemNodes, categories)
+	if err != nil {
+		os.Exit(5)
 	}
-}
 
-func findMissingImages() {
-	logrus.Warnln("Finding missing images (NotImplemented)")
-}
+	err = synchronizeImages()
+	if err != nil {
+		os.Exit(6)
+	}
 
-func uploadImages() {
-	logrus.Warnln("Uploading missing images (NotImplemented)")
+	_ = authentication.Logout(context.Piwigo)
 }
 
 func configureContext() (*AppContext, error) {

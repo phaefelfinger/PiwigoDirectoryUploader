@@ -11,7 +11,6 @@ import (
 )
 
 func GetAllCategories(context *piwigo.PiwigoContext) (map[string]*PiwigoCategory, error) {
-	logrus.Debugln("Starting GetAllCategories")
 	if context.Cookies == nil {
 		return nil, errors.New("Not logged in and no cookies found! Can not get the category list!")
 	}
