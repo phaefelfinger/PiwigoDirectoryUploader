@@ -22,11 +22,11 @@ func GetAllCategories(context *piwigo.PiwigoContext) (map[string]*PiwigoCategory
 
 	client := http.Client{Jar: context.Cookies}
 	response, err := client.PostForm(context.Url, formData)
-
 	if err != nil {
 		logrus.Errorln("The HTTP request failed with error %s", err)
 		return nil, err
 	}
+	defer response.Body.Close()
 
 	var statusResponse getCategoryListResponse
 	if err := json.NewDecoder(response.Body).Decode(&statusResponse); err != nil {
@@ -51,7 +51,7 @@ func GetAllCategories(context *piwigo.PiwigoContext) (map[string]*PiwigoCategory
 func buildLookupMap(categories map[int]*PiwigoCategory) map[string]*PiwigoCategory {
 	categoryLookups := map[string]*PiwigoCategory{}
 	for _, category := range categories {
-		logrus.Debugf("Existing category %s", category.Key)
+		logrus.Debugf("Loaded existing category %s", category.Key)
 		categoryLookups[category.Key] = category
 	}
 	return categoryLookups

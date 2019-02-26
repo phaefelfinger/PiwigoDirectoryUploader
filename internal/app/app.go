@@ -39,7 +39,7 @@ func Run() {
 		logErrorAndExit(err, 4)
 	}
 
-	err = synchronizeCategories(filesystemNodes, categories)
+	err = synchronizeCategories(context, filesystemNodes, categories)
 	if err != nil {
 		logErrorAndExit(err, 5)
 	}

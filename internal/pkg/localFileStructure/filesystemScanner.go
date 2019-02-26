@@ -17,7 +17,7 @@ func ScanLocalFileStructure(path string) (map[string]*FilesystemNode, error) {
 	logrus.Infof("Scanning %s for images...", fullPathRoot)
 
 	fileMap := make(map[string]*FilesystemNode)
-	fullPathReplace := fmt.Sprintf("%s%c",fullPathRoot, os.PathSeparator)
+	fullPathReplace := fmt.Sprintf("%s%c", fullPathRoot, os.PathSeparator)
 	numberOfDirectories := 0
 	numberOfImages := 0
 

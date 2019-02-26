@@ -30,3 +30,13 @@ type getCategoryListResponse struct {
 		} `json:"categories"`
 	} `json:"result"`
 }
+
+type createCategoryResponse struct {
+	Status  string `json:"stat"`
+	Err     int    `json:"err"`
+	Message string `json:"message"`
+	Result  struct {
+		Info string `json:"info"`
+		ID   int    `json:"id"`
+	} `json:"result"`
+}

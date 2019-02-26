@@ -29,11 +29,11 @@ func Login(context *piwigo.PiwigoContext) error {
 	client := http.Client{Jar: context.Cookies}
 
 	response, err := client.PostForm(context.Url, formData)
-
 	if err != nil {
 		logrus.Errorf("The HTTP request failed with error %s", err)
 		return err
 	}
+	defer response.Body.Close()
 
 	var loginResponse LoginResponse
 	if err := json.NewDecoder(response.Body).Decode(&loginResponse); err != nil {
@@ -61,11 +61,11 @@ func Logout(context *piwigo.PiwigoContext) error {
 
 	client := http.Client{Jar: context.Cookies}
 	response, err := client.PostForm(context.Url, formData)
-
 	if err != nil {
 		logrus.Errorln("The HTTP request failed with error %s", err)
 		return err
 	}
+	defer response.Body.Close()
 
 	var statusResponse LogoutResponse
 	if err := json.NewDecoder(response.Body).Decode(&statusResponse); err != nil {
@@ -92,11 +92,11 @@ func GetStatus(context *piwigo.PiwigoContext) (*GetStatusResponse, error) {
 
 	client := http.Client{Jar: context.Cookies}
 	response, err := client.PostForm(context.Url, formData)
-
 	if err != nil {
 		logrus.Errorln("The HTTP request failed with error %s\n", err)
 		return nil, err
 	}
+	defer response.Body.Close()
 
 	var statusResponse GetStatusResponse
 	if err := json.NewDecoder(response.Body).Decode(&statusResponse); err != nil {
