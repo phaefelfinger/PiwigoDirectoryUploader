@@ -69,7 +69,7 @@ func createMissingCategories(context *AppContext, missingCategories []string, ex
 		existingCategories[newCategory.Key] = &newCategory
 	}
 
-	return errors.New("createMissingCategories: NOT IMPLEMENTED")
+	return nil
 }
 
 func getNameAndParentId(category string, categories map[string]*category.PiwigoCategory) (string, int, error) {
