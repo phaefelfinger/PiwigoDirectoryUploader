@@ -21,6 +21,11 @@ func synchronizeCategories(context *AppContext, filesystemNodes map[string]*loca
 
 	missingCategories := findMissingCategories(filesystemNodes, existingCategories)
 
+	if len(missingCategories) == 0 {
+		logrus.Infof("No categories missing!")
+		return nil
+	}
+
 	return createMissingCategories(context, missingCategories, existingCategories)
 }
 
@@ -49,6 +54,8 @@ func createMissingCategories(context *AppContext, missingCategories []string, ex
 	// we sort them to make sure the categories gets created
 	// in the right order and we have the parent available while creating the children
 	sort.Strings(missingCategories)
+
+	logrus.Infof("Creating %d categories", len(missingCategories))
 
 	for _, categoryKey := range missingCategories {
 		logrus.Infof("Creating category %s", categoryKey)
