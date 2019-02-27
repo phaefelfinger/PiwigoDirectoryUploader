@@ -44,7 +44,7 @@ func Run() {
 		logErrorAndExit(err, 5)
 	}
 
-	err = synchronizeImages(filesystemNodes, categories)
+	err = synchronizeImages(context, filesystemNodes, categories)
 	if err != nil {
 		logErrorAndExit(err, 6)
 	}

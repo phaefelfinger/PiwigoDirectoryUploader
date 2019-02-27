@@ -9,7 +9,10 @@ import (
 
 func synchronizeImages(context *AppContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {
 
-	imageFiles := getImageList(fileSystem)
+	imageFiles, err := localFileStructure.GetImageList(fileSystem)
+	if err != nil {
+		return err
+	}
 
 	missingFiles := findMissingImages(imageFiles)
 	uploadImages(missingFiles)
@@ -17,7 +20,7 @@ func synchronizeImages(context *AppContext, fileSystem map[string]*localFileStru
 	return errors.New("synchronizeImages: NOT IMPLEMENTED")
 }
 
-func findMissingImages(imageFiles []string) []string {
+func findMissingImages(imageFiles []*localFileStructure.ImageNode) []string {
 
 	logrus.Warnln("Finding missing images (NotImplemented)")
 
@@ -26,16 +29,4 @@ func findMissingImages(imageFiles []string) []string {
 
 func uploadImages(missingFiles []string) {
 	logrus.Warnln("Uploading missing images (NotImplemented)")
-}
-
-func getImageList(fileSystem map[string]*localFileStructure.FilesystemNode) []string {
-	imageFiles := []string{}
-
-	for _, file := range fileSystem {
-		if !file.IsDir {
-			imageFiles = append(imageFiles, file.Key)
-		}
-	}
-
-	return imageFiles
 }

@@ -1,6 +1,5 @@
 package picture
 
-
 /*
 http://pictures.haefelfinger.net/ws.php?format=json
 {
@@ -8,4 +7,4 @@ http://pictures.haefelfinger.net/ws.php?format=json
     "original_sum": "1234567",
     "position": "1"
 }
- */
+*/

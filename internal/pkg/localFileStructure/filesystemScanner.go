@@ -21,19 +21,21 @@ func ScanLocalFileStructure(path string) (map[string]*FilesystemNode, error) {
 	numberOfDirectories := 0
 	numberOfImages := 0
 
-	err = filepath.Walk(fullPathRoot, func(p string, info os.FileInfo, err error) error {
-		if fullPathRoot == p {
+	err = filepath.Walk(fullPathRoot, func(path string, info os.FileInfo, err error) error {
+		if fullPathRoot == path {
 			return nil
 		}
 
 		//TODO: Only allow jpg and png files here
 
-		key := strings.Replace(p, fullPathReplace, "", 1)
+		key := strings.Replace(path, fullPathReplace, "", 1)
 
-		fileMap[p] = &FilesystemNode{
-			Key:   key,
-			Name:  info.Name(),
-			IsDir: info.IsDir(),
+		fileMap[path] = &FilesystemNode{
+			Key:     key,
+			Path:    path,
+			Name:    info.Name(),
+			IsDir:   info.IsDir(),
+			ModTime: info.ModTime(),
 		}
 
 		if info.IsDir() {
