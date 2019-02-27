@@ -7,7 +7,7 @@ import (
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
 )
 
-func synchronizeImages(context *AppContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {
+func synchronizeImages(context *appContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {
 
 	imageFiles, err := localFileStructure.GetImageList(fileSystem)
 	if err != nil {

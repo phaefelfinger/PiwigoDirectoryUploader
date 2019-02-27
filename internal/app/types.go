@@ -4,7 +4,7 @@ import (
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
 )
 
-type AppContext struct {
+type appContext struct {
 	Piwigo         *piwigo.PiwigoContext
 	SessionId      string
 	LocalRootPath  string

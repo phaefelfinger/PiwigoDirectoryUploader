@@ -10,13 +10,13 @@ import (
 	"sort"
 )
 
-func getAllCategoriesFromServer(context *AppContext) (map[string]*category.PiwigoCategory, error) {
+func getAllCategoriesFromServer(context *appContext) (map[string]*category.PiwigoCategory, error) {
 	logrus.Debugln("Starting GetAllCategories")
 	categories, err := category.GetAllCategories(context.Piwigo)
 	return categories, err
 }
 
-func synchronizeCategories(context *AppContext, filesystemNodes map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {
+func synchronizeCategories(context *appContext, filesystemNodes map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {
 	logrus.Infoln("Synchronizing categories...")
 
 	missingCategories := findMissingCategories(filesystemNodes, existingCategories)
@@ -50,7 +50,7 @@ func findMissingCategories(fileSystem map[string]*localFileStructure.FilesystemN
 	return missingCategories
 }
 
-func createMissingCategories(context *AppContext, missingCategories []string, existingCategories map[string]*category.PiwigoCategory) error {
+func createMissingCategories(context *appContext, missingCategories []string, existingCategories map[string]*category.PiwigoCategory) error {
 	// we sort them to make sure the categories gets created
 	// in the right order and we have the parent available while creating the children
 	sort.Strings(missingCategories)

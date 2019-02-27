@@ -52,7 +52,7 @@ func Run() {
 	_ = authentication.Logout(context.Piwigo)
 }
 
-func configureContext() (*AppContext, error) {
+func configureContext() (*appContext, error) {
 	logrus.Infoln("Preparing application context and configuration")
 
 	if *piwigoUrl == "" {
@@ -67,7 +67,7 @@ func configureContext() (*AppContext, error) {
 		return nil, errors.New("missing piwigo password!")
 	}
 
-	context := new(AppContext)
+	context := new(appContext)
 	context.LocalRootPath = *imagesRootPath
 	context.Piwigo = new(piwigo.PiwigoContext)
 	context.Piwigo.Url = fmt.Sprintf("%s/ws.php?format=json", *piwigoUrl)
@@ -77,7 +77,7 @@ func configureContext() (*AppContext, error) {
 	return context, nil
 }
 
-func loginToPiwigoAndConfigureContext(context *AppContext) error {
+func loginToPiwigoAndConfigureContext(context *appContext) error {
 	logrus.Infoln("Logging in to piwigo and getting chunk size configuration for uploads")
 	err := authentication.Login(context.Piwigo)
 	if err != nil {
@@ -86,7 +86,7 @@ func loginToPiwigoAndConfigureContext(context *AppContext) error {
 	return initializeUploadChunkSize(context)
 }
 
-func initializeUploadChunkSize(context *AppContext) error {
+func initializeUploadChunkSize(context *appContext) error {
 	userStatus, err := authentication.GetStatus(context.Piwigo)
 	if err != nil {
 		return err
