@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
+	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/picture"
 )
 
 func synchronizeImages(context *appContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {
@@ -14,19 +15,44 @@ func synchronizeImages(context *appContext, fileSystem map[string]*localFileStru
 		return err
 	}
 
-	missingFiles := findMissingImages(imageFiles)
+	missingFiles, err := findMissingImages(context, imageFiles)
+	if err != nil {
+		return err
+	}
+
 	uploadImages(missingFiles)
 
 	return errors.New("synchronizeImages: NOT IMPLEMENTED")
 }
 
-func findMissingImages(imageFiles []*localFileStructure.ImageNode) []string {
+func findMissingImages(context *appContext, imageFiles []*localFileStructure.ImageNode) ([]*localFileStructure.ImageNode, error) {
 
-	logrus.Warnln("Finding missing images (NotImplemented)")
+	logrus.Debugln("Preparing lookuplist for missing files...")
 
-	return nil
+	files := make([]string, 0, len(imageFiles))
+	md5map := make(map[string]*localFileStructure.ImageNode, len(imageFiles))
+	for _, file := range imageFiles  {
+		md5map[file.Md5Sum] = file
+		files = append(files, file.Md5Sum)
+	}
+
+	misingSums, err := picture.ImageUploadRequired(context.Piwigo, files)
+	if err != nil {
+		return nil, err
+	}
+
+	missingFiles := make([]*localFileStructure.ImageNode, 0, len(misingSums))
+	for _, sum := range misingSums  {
+		file := md5map[sum]
+		logrus.Infof("Found missing file %s", file.Path)
+		missingFiles = append(missingFiles, file)
+	}
+
+	logrus.Infof("Found %d missing files", len(missingFiles))
+
+	return missingFiles, nil
 }
 
-func uploadImages(missingFiles []string) {
+func uploadImages(missingFiles []*localFileStructure.ImageNode) {
 	logrus.Warnln("Uploading missing images (NotImplemented)")
 }

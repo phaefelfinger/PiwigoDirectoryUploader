@@ -9,20 +9,20 @@ import (
 )
 
 func calculateFileCheckSums(filePath string) (string, error) {
-	f, err := os.Open(filePath)
+	file, err := os.Open(filePath)
 	if err != nil {
 		logrus.Errorf("Could not open file %s", filePath)
 		return "", err
 	}
-	defer f.Close()
+	defer file.Close()
 
-	h := md5.New()
-	if _, err := io.Copy(h, f); err != nil {
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
 		logrus.Errorf("Could calculate md5 sum of file %s", filePath)
 		return "", err
 	}
 
-	md5sum := fmt.Sprintf("%x", md5.Sum(nil))
+	md5sum := fmt.Sprintf("%x", hash.Sum(nil))
 
 	logrus.Tracef("Calculated md5 sum of %s - %s", filePath, md5sum)
 

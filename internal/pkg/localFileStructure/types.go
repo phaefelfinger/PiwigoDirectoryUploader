@@ -18,7 +18,8 @@ func (n *FilesystemNode) String() string {
 }
 
 type ImageNode struct {
-	Path    string
-	ModTime time.Time
-	Md5Sum  string
+	Path      string
+	Directory string
+	ModTime   time.Time
+	Md5Sum    string
 }

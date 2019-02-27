@@ -30,7 +30,7 @@ func synchronizeCategories(context *appContext, filesystemNodes map[string]*loca
 }
 
 func findMissingCategories(fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) []string {
-	missingCategories := []string{}
+	missingCategories := make([]string, 0, len(fileSystem))
 
 	for _, file := range fileSystem {
 		if !file.IsDir {
