@@ -26,7 +26,10 @@ func ScanLocalFileStructure(path string) (map[string]*FilesystemNode, error) {
 			return nil
 		}
 
-		//TODO: Only allow jpg and png files here
+		extension := strings.ToLower(filepath.Ext(path))
+		if extension != ".jpg" && extension != ".png" {
+			return nil
+		}
 
 		key := strings.Replace(path, fullPathReplace, "", 1)
 
