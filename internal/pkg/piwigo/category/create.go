@@ -6,15 +6,10 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
-	"net/http"
 	"net/url"
 )
 
 func CreateCategory(context *piwigo.PiwigoContext, parentId int, name string) (int, error) {
-	if context.Cookies == nil {
-		return 0, errors.New("Not logged in and no cookies found! Can not get the category list!")
-	}
-
 	formData := url.Values{}
 	formData.Set("method", "pwg.categories.add")
 	formData.Set("name", name)
@@ -24,10 +19,8 @@ func CreateCategory(context *piwigo.PiwigoContext, parentId int, name string) (i
 		formData.Set("parent", fmt.Sprint(parentId))
 	}
 
-	client := http.Client{Jar: context.Cookies}
-	response, err := client.PostForm(context.Url, formData)
+	response, err := context.PostForm(formData)
 	if err != nil {
-		logrus.Errorln("The HTTP request failed with error %s", err)
 		return 0, err
 	}
 	defer response.Body.Close()

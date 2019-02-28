@@ -34,7 +34,7 @@ func findMissingImages(context *appContext, imageFiles []*localFileStructure.Ima
 
 	files := make([]string, 0, len(imageFiles))
 	md5map := make(map[string]*localFileStructure.ImageNode, len(imageFiles))
-	for _, file := range imageFiles  {
+	for _, file := range imageFiles {
 		md5map[file.Md5Sum] = file
 		files = append(files, file.Md5Sum)
 	}
@@ -45,7 +45,7 @@ func findMissingImages(context *appContext, imageFiles []*localFileStructure.Ima
 	}
 
 	missingFiles := make([]*localFileStructure.ImageNode, 0, len(misingSums))
-	for _, sum := range misingSums  {
+	for _, sum := range misingSums {
 		file := md5map[sum]
 		logrus.Infof("Found missing file %s", file.Path)
 		missingFiles = append(missingFiles, file)

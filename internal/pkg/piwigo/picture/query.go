@@ -2,20 +2,13 @@ package picture
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
-	"net/http"
 	"net/url"
 	"strings"
 )
 
 func ImageUploadRequired(context *piwigo.PiwigoContext, md5sums []string) ([]string, error) {
-
-	if context.Cookies == nil {
-		return nil, errors.New("Not logged in and no cookies found! Can not get the category list!")
-	}
-
 	//TODO: make sure to split to multiple queries -> to honor max upload queries
 
 	md5sumList := strings.Join(md5sums, ",")
@@ -26,10 +19,8 @@ func ImageUploadRequired(context *piwigo.PiwigoContext, md5sums []string) ([]str
 
 	logrus.Tracef("Looking up missing files: %s", md5sumList)
 
-	client := http.Client{Jar: context.Cookies}
-	response, err := client.PostForm(context.Url, formData)
+	response, err := context.PostForm(formData)
 	if err != nil {
-		logrus.Errorln("The HTTP request failed with error %s", err)
 		return nil, err
 	}
 	defer response.Body.Close()

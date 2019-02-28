@@ -6,28 +6,19 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
-	"net/http"
 	"net/url"
 	"strconv"
 )
 
 func UploadImage(context *piwigo.PiwigoContext, filePath string, md5sum string, category int) (int, error) {
-
-	if context.Cookies == nil {
-		return 0, errors.New("Not logged in and no cookies found! Can not get the category list!")
-	}
-
 	logrus.Infof("Uploading %s", filePath)
 
 	// split into chunks
 	// upload chunks
 	// finalize upload
 
-
 	return 0, nil
 }
-
-
 
 func uploadImageChunk(context *piwigo.PiwigoContext, base64chunk string, md5sum string, position int) error {
 	formData := url.Values{}
@@ -40,10 +31,8 @@ func uploadImageChunk(context *piwigo.PiwigoContext, base64chunk string, md5sum 
 
 	logrus.Tracef("Uploading chunk %d of file with sum %s", position, md5sum)
 
-	client := http.Client{Jar: context.Cookies}
-	response, err := client.PostForm(context.Url, formData)
+	response, err := context.PostForm(formData)
 	if err != nil {
-		logrus.Errorln("The HTTP request failed with error %s", err)
 		return err
 	}
 	defer response.Body.Close()
@@ -62,7 +51,6 @@ func uploadImageChunk(context *piwigo.PiwigoContext, base64chunk string, md5sum 
 	return nil
 }
 
-
 func uploadImageFinal(context *piwigo.PiwigoContext, originalFilename string, md5sum string, categoryId int) error {
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.add")
@@ -72,10 +60,8 @@ func uploadImageFinal(context *piwigo.PiwigoContext, originalFilename string, md
 
 	logrus.Debugf("Finalizing upload of file %s with sum %s to category %d", originalFilename, md5sum, categoryId)
 
-	client := http.Client{Jar: context.Cookies}
-	response, err := client.PostForm(context.Url, formData)
+	response, err := context.PostForm(formData)
 	if err != nil {
-		logrus.Errorln("The HTTP request failed with error %s", err)
 		return err
 	}
 	defer response.Body.Close()
