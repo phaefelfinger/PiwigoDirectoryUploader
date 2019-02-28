@@ -20,7 +20,10 @@ func synchronizeImages(context *appContext, fileSystem map[string]*localFileStru
 		return err
 	}
 
-	uploadImages(missingFiles)
+	err = uploadImages(context, missingFiles, existingCategories)
+	if err != nil {
+		return err
+	}
 
 	return errors.New("synchronizeImages: NOT IMPLEMENTED")
 }
@@ -53,6 +56,19 @@ func findMissingImages(context *appContext, imageFiles []*localFileStructure.Ima
 	return missingFiles, nil
 }
 
-func uploadImages(missingFiles []*localFileStructure.ImageNode) {
+func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageNode, existingCategories map[string]*category.PiwigoCategory) error {
 	logrus.Warnln("Uploading missing images (NotImplemented)")
+
+	for _, file := range missingFiles {
+		logrus.Infof("Uploading %s", file.Path)
+		categoryId := existingCategories[file.CategoryName].Id
+
+		//TODO handle added id
+		_, err := picture.UploadImage(context.Piwigo, file.Path, file.Md5Sum, categoryId)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

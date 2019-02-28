@@ -22,10 +22,10 @@ func GetImageList(fileSystem map[string]*FilesystemNode) ([]*ImageNode, error) {
 		logrus.Debugf("Local Image %s - %s - %s", md5sum, file.ModTime.Format(time.RFC3339), file.Path)
 
 		imageFiles = append(imageFiles, &ImageNode{
-			Path:      file.Path,
-			Directory: filepath.Dir(file.Path),
-			ModTime:   file.ModTime,
-			Md5Sum:    md5sum,
+			Path:         file.Path,
+			CategoryName: filepath.Dir(file.Key),
+			ModTime:      file.ModTime,
+			Md5Sum:       md5sum,
 		})
 	}
 

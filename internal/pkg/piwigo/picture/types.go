@@ -5,6 +5,11 @@ type uploadChunkResponse struct {
 	Result interface{} `json:"result"`
 }
 
+type fileAddResponse struct {
+	Status string `json:"stat"`
+	Result string `json:"result"`
+}
+
 type imageExistResponse struct {
 	Stat   string            `json:"stat"`
 	Result map[string]string `json:"result"`
