@@ -25,7 +25,7 @@ func UploadImage(context *piwigo.PiwigoContext, filePath string, md5sum string, 
 	}
 
 	fileSizeInKB := fileInfo.Size() / 1024
-	logrus.Infof("Uploading %s using chunksize of %d KB and total size of %d", filePath, context.ChunkSizeInKB, fileSizeInKB)
+	logrus.Infof("Uploading %s using chunksize of %d KB and total size of %d KB", filePath, context.ChunkSizeInKB, fileSizeInKB)
 
 	err = uploadImageChunks(filePath, context, fileSizeInKB, md5sum)
 	if err != nil {
