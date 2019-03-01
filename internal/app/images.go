@@ -60,7 +60,7 @@ func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageN
 	logrus.Warnln("Uploading missing images (NotImplemented)")
 
 	for _, file := range missingFiles {
-		logrus.Infof("Uploading %s", file.Path)
+		logrus.Infof("Uploading %s %s", file.CategoryName, file.Path)
 		categoryId := existingCategories[file.CategoryName].Id
 
 		//TODO handle added id
