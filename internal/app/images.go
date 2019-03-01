@@ -5,6 +5,7 @@ import (
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/picture"
 	"github.com/sirupsen/logrus"
+	"sort"
 )
 
 func synchronizeImages(context *appContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {
@@ -58,6 +59,12 @@ func findMissingImages(context *appContext, imageFiles []*localFileStructure.Ima
 }
 
 func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageNode, existingCategories map[string]*category.PiwigoCategory) error {
+
+	// We sort the files by path to populate per category and not random by file
+	sort.Slice(missingFiles, func(i, j int) bool {
+		return missingFiles[i].Path < missingFiles[j].Path
+	})
+
 	for _, file := range missingFiles {
 		logrus.Infof("Uploading %s %s", file.CategoryName, file.Path)
 		categoryId := existingCategories[file.CategoryName].Id
