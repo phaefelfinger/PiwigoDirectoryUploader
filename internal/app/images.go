@@ -3,9 +3,9 @@ package app
 import (
 	"errors"
 	"github.com/sirupsen/logrus"
-	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
-	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
-	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/picture"
+	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
+	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
+	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/picture"
 )
 
 func synchronizeImages(context *appContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {

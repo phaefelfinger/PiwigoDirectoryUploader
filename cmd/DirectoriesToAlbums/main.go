@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/vharitonsky/iniflags"
-	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/app"
+	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/app"
 	"os"
 )
 

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
-	"haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
+	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
+	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
 	"path/filepath"
 	"sort"
 )
