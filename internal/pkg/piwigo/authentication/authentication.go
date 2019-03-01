@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
+	"github.com/sirupsen/logrus"
 	"net/url"
 	"strings"
 )

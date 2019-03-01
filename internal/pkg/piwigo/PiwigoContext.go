@@ -8,10 +8,11 @@ import (
 )
 
 type PiwigoContext struct {
-	Url      string
-	Username string
-	Password string
-	Cookies  *cookiejar.Jar
+	Url           string
+	Username      string
+	Password      string
+	ChunkSizeInKB int
+	Cookies       *cookiejar.Jar
 }
 
 func (context *PiwigoContext) PostForm(formData url.Values) (resp *http.Response, err error) {

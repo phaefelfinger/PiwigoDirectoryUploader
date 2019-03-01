@@ -1,9 +1,9 @@
 package main
 
 import (
+	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/app"
 	"github.com/sirupsen/logrus"
 	"github.com/vharitonsky/iniflags"
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/app"
 	"os"
 )
 

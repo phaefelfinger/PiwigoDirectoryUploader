@@ -1,11 +1,10 @@
 package app
 
 import (
-	"errors"
-	"github.com/sirupsen/logrus"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/picture"
+	"github.com/sirupsen/logrus"
 )
 
 func synchronizeImages(context *appContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {
@@ -25,7 +24,9 @@ func synchronizeImages(context *appContext, fileSystem map[string]*localFileStru
 		return err
 	}
 
-	return errors.New("synchronizeImages: NOT IMPLEMENTED")
+	logrus.Infof("Synchronized %d files.", len(missingFiles))
+
+	return nil
 }
 
 func findMissingImages(context *appContext, imageFiles []*localFileStructure.ImageNode) ([]*localFileStructure.ImageNode, error) {
@@ -57,17 +58,15 @@ func findMissingImages(context *appContext, imageFiles []*localFileStructure.Ima
 }
 
 func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageNode, existingCategories map[string]*category.PiwigoCategory) error {
-	logrus.Warnln("Uploading missing images (NotImplemented)")
-
 	for _, file := range missingFiles {
 		logrus.Infof("Uploading %s %s", file.CategoryName, file.Path)
 		categoryId := existingCategories[file.CategoryName].Id
 
-		//TODO handle added id
-		_, err := picture.UploadImage(context.Piwigo, file.Path, file.Md5Sum, categoryId)
+		imageId, err := picture.UploadImage(context.Piwigo, file.Path, file.Md5Sum, categoryId)
 		if err != nil {
 			return err
 		}
+		file.ImageId = imageId
 	}
 
 	return nil

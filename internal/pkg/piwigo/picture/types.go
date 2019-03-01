@@ -7,7 +7,10 @@ type uploadChunkResponse struct {
 
 type fileAddResponse struct {
 	Status string `json:"stat"`
-	Result string `json:"result"`
+	Result struct {
+		ImageID int    `json:"image_id"`
+		URL     string `json:"url"`
+	} `json:"result"`
 }
 
 type imageExistResponse struct {

@@ -2,14 +2,15 @@ package picture
 
 import (
 	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
+	"github.com/sirupsen/logrus"
 	"net/url"
 	"strings"
 )
 
 func ImageUploadRequired(context *piwigo.PiwigoContext, md5sums []string) ([]string, error) {
 	//TODO: make sure to split to multiple queries -> to honor max upload queries
+	//TODO: Make sure to return the found imageIds of the found sums to update the local image nodes
 
 	md5sumList := strings.Join(md5sums, ",")
 

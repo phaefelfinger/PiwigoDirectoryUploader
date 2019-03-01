@@ -4,18 +4,19 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/authentication"
+	"github.com/sirupsen/logrus"
 	"os"
 )
 
 var (
-	imagesRootPath = flag.String("imagesRootPath", "", "This is the images root path that should be mirrored to piwigo.")
-	piwigoUrl      = flag.String("piwigoUrl", "", "The root url without tailing slash to your piwigo installation.")
-	piwigoUser     = flag.String("piwigoUser", "", "The username to use during sync.")
-	piwigoPassword = flag.String("piwigoPassword", "", "This is password to the given username.")
+	imagesRootPath            = flag.String("imagesRootPath", "", "This is the images root path that should be mirrored to piwigo.")
+	piwigoUrl                 = flag.String("piwigoUrl", "", "The root url without tailing slash to your piwigo installation.")
+	piwigoUser                = flag.String("piwigoUser", "", "The username to use during sync.")
+	piwigoPassword            = flag.String("piwigoPassword", "", "This is password to the given username.")
+	piwigoUploadChunkSizeInKB = flag.Int("piwigoUploadChunkSizeInKB", 512, "The chunksize used to upload an image to piwigo.")
 )
 
 func Run() {
@@ -73,6 +74,7 @@ func configureContext() (*appContext, error) {
 	context.Piwigo.Url = fmt.Sprintf("%s/ws.php?format=json", *piwigoUrl)
 	context.Piwigo.Username = *piwigoUser
 	context.Piwigo.Password = *piwigoPassword
+	context.Piwigo.ChunkSizeInKB = *piwigoUploadChunkSizeInKB
 
 	return context, nil
 }

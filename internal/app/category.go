@@ -3,9 +3,9 @@ package app
 import (
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
+	"github.com/sirupsen/logrus"
 	"path/filepath"
 	"sort"
 )

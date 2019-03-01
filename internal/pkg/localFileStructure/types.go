@@ -22,4 +22,5 @@ type ImageNode struct {
 	CategoryName string
 	ModTime      time.Time
 	Md5Sum       string
+	ImageId      int
 }
