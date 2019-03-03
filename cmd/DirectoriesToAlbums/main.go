@@ -9,13 +9,11 @@ import (
 
 func main() {
 	iniflags.Parse()
-
-	InitializeLog()
-
+	initializeLog()
 	app.Run()
 }
 
-func InitializeLog() {
+func initializeLog() {
 	//TODO: make log configurable to file instead of console
 	logrus.SetLevel(logrus.DebugLevel)
 	logrus.SetOutput(os.Stdout)
