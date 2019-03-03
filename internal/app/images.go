@@ -66,7 +66,6 @@ func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageN
 	})
 
 	for _, file := range missingFiles {
-		logrus.Infof("Uploading %s %s", file.CategoryName, file.Path)
 		categoryId := existingCategories[file.CategoryName].Id
 
 		imageId, err := picture.UploadImage(context.Piwigo, file.Path, file.Md5Sum, categoryId)
