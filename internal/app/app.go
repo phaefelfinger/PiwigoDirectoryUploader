@@ -4,9 +4,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/authentication"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo/authentication"
 	"github.com/sirupsen/logrus"
 	"os"
 )

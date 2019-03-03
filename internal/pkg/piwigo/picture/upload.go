@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"

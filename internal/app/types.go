@@ -1,7 +1,7 @@
 package app
 
 import (
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 )
 
 type appContext struct {

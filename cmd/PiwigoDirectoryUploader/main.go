@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/app"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/app"
 	"github.com/sirupsen/logrus"
 	"github.com/vharitonsky/iniflags"
 	"os"

@@ -1,9 +1,9 @@
 package app
 
 import (
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/localFileStructure"
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/category"
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo/picture"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo/category"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo/picture"
 	"github.com/sirupsen/logrus"
 	"sort"
 )

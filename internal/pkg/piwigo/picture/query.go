@@ -2,7 +2,7 @@ package picture
 
 import (
 	"encoding/json"
-	"git.haefelfinger.net/piwigo/DirectoriesToAlbums/internal/pkg/piwigo"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
 	"net/url"
 	"strings"
