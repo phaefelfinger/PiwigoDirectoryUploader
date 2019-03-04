@@ -38,7 +38,7 @@ Build your main executable by using the following command. By default it gets th
 favorite application name.
 
 ```
-go build cmd/PiwigoDirectoryUploader/main.go
+go build cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
 ```
 
 ### Configure
@@ -56,5 +56,5 @@ nano ./localConfig.ini
 Finally you may run the application using the following example command.
 
 ```
-./main -config=./localConfig.ini
+./PiwigoDirectoryUploader -config=./localConfig.ini
 ```
