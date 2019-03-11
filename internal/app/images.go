@@ -2,8 +2,8 @@ package app
 
 import (
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo/category"
-	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo/picture"
 	"github.com/sirupsen/logrus"
 	"sort"
 )
@@ -41,7 +41,7 @@ func findMissingImages(context *appContext, imageFiles []*localFileStructure.Ima
 		files = append(files, file.Md5Sum)
 	}
 
-	misingSums, err := picture.ImageUploadRequired(context.Piwigo, files)
+	misingSums, err := piwigo.ImageUploadRequired(context.Piwigo, files)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageN
 	for _, file := range missingFiles {
 		categoryId := existingCategories[file.CategoryName].Id
 
-		imageId, err := picture.UploadImage(context.Piwigo, file.Path, file.Md5Sum, categoryId)
+		imageId, err := piwigo.UploadImage(context.Piwigo, file.Path, file.Md5Sum, categoryId)
 		if err != nil {
 			return err
 		}

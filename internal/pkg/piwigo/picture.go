@@ -1,4 +1,4 @@
-package picture
+package piwigo
 
 import (
 	"bufio"
@@ -6,15 +6,69 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
-func UploadImage(context *piwigo.PiwigoContext, filePath string, md5sum string, category int) (int, error) {
+type uploadChunkResponse struct {
+	Status string      `json:"stat"`
+	Result interface{} `json:"result"`
+}
+
+type fileAddResponse struct {
+	Status string `json:"stat"`
+	Result struct {
+		ImageID int    `json:"image_id"`
+		URL     string `json:"url"`
+	} `json:"result"`
+}
+
+type imageExistResponse struct {
+	Stat   string            `json:"stat"`
+	Result map[string]string `json:"result"`
+}
+
+func ImageUploadRequired(context *PiwigoContext, md5sums []string) ([]string, error) {
+	//TODO: make sure to split to multiple queries -> to honor max upload queries
+	//TODO: Make sure to return the found imageIds of the found sums to update the local image nodes
+
+	md5sumList := strings.Join(md5sums, ",")
+
+	formData := url.Values{}
+	formData.Set("method", "pwg.images.exist")
+	formData.Set("md5sum_list", md5sumList)
+
+	logrus.Tracef("Looking up missing files: %s", md5sumList)
+
+	response, err := context.PostForm(formData)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	var imageExistResponse imageExistResponse
+	if err := json.NewDecoder(response.Body).Decode(&imageExistResponse); err != nil {
+		logrus.Errorln(err)
+		return nil, err
+	}
+
+	missingFiles := make([]string, 0, len(imageExistResponse.Result))
+
+	for key, value := range imageExistResponse.Result {
+		if value == "" {
+			logrus.Tracef("Missing file with md5sum: %s", key)
+			missingFiles = append(missingFiles, key)
+		}
+	}
+
+	return missingFiles, nil
+}
+
+func UploadImage(context *PiwigoContext, filePath string, md5sum string, category int) (int, error) {
 	if context.ChunkSizeInKB <= 0 {
 		return 0, errors.New("Uploadchunk size is less or equal to zero. 512 is a recommendet value to begin with.")
 	}
@@ -40,7 +94,7 @@ func UploadImage(context *piwigo.PiwigoContext, filePath string, md5sum string, 
 	return imageId, nil
 }
 
-func uploadImageChunks(filePath string, context *piwigo.PiwigoContext, fileSizeInKB int64, md5sum string) error {
+func uploadImageChunks(filePath string, context *PiwigoContext, fileSizeInKB int64, md5sum string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -76,7 +130,7 @@ func uploadImageChunks(filePath string, context *piwigo.PiwigoContext, fileSizeI
 	return nil
 }
 
-func uploadImageChunk(context *piwigo.PiwigoContext, base64chunk string, md5sum string, position int64) error {
+func uploadImageChunk(context *PiwigoContext, base64chunk string, md5sum string, position int64) error {
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.addChunk")
 	formData.Set("data", base64chunk)
@@ -107,7 +161,7 @@ func uploadImageChunk(context *piwigo.PiwigoContext, base64chunk string, md5sum 
 	return nil
 }
 
-func uploadImageFinal(context *piwigo.PiwigoContext, originalFilename string, md5sum string, categoryId int) (int, error) {
+func uploadImageFinal(context *PiwigoContext, originalFilename string, md5sum string, categoryId int) (int, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.add")
 	formData.Set("original_sum", md5sum)
