@@ -3,12 +3,11 @@ package app
 import (
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
-	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo/category"
 	"github.com/sirupsen/logrus"
 	"sort"
 )
 
-func synchronizeImages(context *appContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {
+func synchronizeImages(context *appContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*piwigo.PiwigoCategory) error {
 
 	imageFiles, err := localFileStructure.GetImageList(fileSystem)
 	if err != nil {
@@ -58,7 +57,7 @@ func findMissingImages(context *appContext, imageFiles []*localFileStructure.Ima
 	return missingFiles, nil
 }
 
-func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageNode, existingCategories map[string]*category.PiwigoCategory) error {
+func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageNode, existingCategories map[string]*piwigo.PiwigoCategory) error {
 
 	// We sort the files by path to populate per category and not random by file
 	sort.Slice(missingFiles, func(i, j int) bool {

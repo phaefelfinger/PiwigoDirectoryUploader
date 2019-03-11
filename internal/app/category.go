@@ -4,19 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
-	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo/category"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
 	"path/filepath"
 	"sort"
 )
 
-func getAllCategoriesFromServer(context *appContext) (map[string]*category.PiwigoCategory, error) {
+func getAllCategoriesFromServer(context *appContext) (map[string]*piwigo.PiwigoCategory, error) {
 	logrus.Debugln("Starting GetAllCategories")
-	categories, err := category.GetAllCategories(context.Piwigo)
+	categories, err := piwigo.GetAllCategories(context.Piwigo)
 	return categories, err
 }
 
-func synchronizeCategories(context *appContext, filesystemNodes map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) error {
+func synchronizeCategories(context *appContext, filesystemNodes map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*piwigo.PiwigoCategory) error {
 	logrus.Infoln("Synchronizing categories...")
 
 	missingCategories := findMissingCategories(filesystemNodes, existingCategories)
@@ -29,7 +29,7 @@ func synchronizeCategories(context *appContext, filesystemNodes map[string]*loca
 	return createMissingCategories(context, missingCategories, existingCategories)
 }
 
-func findMissingCategories(fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*category.PiwigoCategory) []string {
+func findMissingCategories(fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*piwigo.PiwigoCategory) []string {
 	missingCategories := make([]string, 0, len(fileSystem))
 
 	for _, file := range fileSystem {
@@ -50,7 +50,7 @@ func findMissingCategories(fileSystem map[string]*localFileStructure.FilesystemN
 	return missingCategories
 }
 
-func createMissingCategories(context *appContext, missingCategories []string, existingCategories map[string]*category.PiwigoCategory) error {
+func createMissingCategories(context *appContext, missingCategories []string, existingCategories map[string]*piwigo.PiwigoCategory) error {
 	// we sort them to make sure the categories gets created
 	// in the right order and we have the parent available while creating the children
 	sort.Strings(missingCategories)
@@ -66,12 +66,12 @@ func createMissingCategories(context *appContext, missingCategories []string, ex
 		}
 
 		// create category on piwigo
-		id, err := category.CreateCategory(context.Piwigo, parentId, name)
+		id, err := piwigo.CreateCategory(context.Piwigo, parentId, name)
 		if err != nil {
 			return errors.New(fmt.Sprintf("Could not create category on piwigo: %s", err))
 		}
 
-		newCategory := category.PiwigoCategory{Id: id, Name: name, ParentId: parentId, Key: categoryKey}
+		newCategory := piwigo.PiwigoCategory{Id: id, Name: name, ParentId: parentId, Key: categoryKey}
 		logrus.Println(newCategory)
 		existingCategories[newCategory.Key] = &newCategory
 	}
@@ -79,7 +79,7 @@ func createMissingCategories(context *appContext, missingCategories []string, ex
 	return nil
 }
 
-func getNameAndParentId(category string, categories map[string]*category.PiwigoCategory) (string, int, error) {
+func getNameAndParentId(category string, categories map[string]*piwigo.PiwigoCategory) (string, int, error) {
 	parentKey := filepath.Dir(category)
 	_, name := filepath.Split(category)
 	if name == category {
