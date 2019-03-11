@@ -1,16 +1,44 @@
-package authentication
+package piwigo
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
 	"net/url"
 	"strings"
 )
 
-func Login(context *piwigo.PiwigoContext) error {
+type LoginResponse struct {
+	Status      string `json:"stat"`
+	Result      bool   `json:"result"`
+	ErrorNumber int    `json:"err"`
+	Message     string `json:"message"`
+}
+
+type GetStatusResponse struct {
+	Status string `json:"stat"`
+	Result struct {
+		Username            string   `json:"username"`
+		Status              string   `json:"status"`
+		Theme               string   `json:"theme"`
+		Language            string   `json:"language"`
+		PwgToken            string   `json:"pwg_token"`
+		Charset             string   `json:"charset"`
+		CurrentDatetime     string   `json:"current_datetime"`
+		Version             string   `json:"version"`
+		AvailableSizes      []string `json:"available_sizes"`
+		UploadFileTypes     string   `json:"upload_file_types"`
+		UploadFormChunkSize int      `json:"upload_form_chunk_size"`
+	} `json:"result"`
+}
+
+type LogoutResponse struct {
+	Status string `json:"stat"`
+	Result bool   `json:"result"`
+}
+
+func Login(context *PiwigoContext) error {
 	logrus.Debugf("Logging in to %s using user %s", context.Url, context.Username)
 
 	if !strings.HasPrefix(context.Url, "https") {
@@ -44,7 +72,7 @@ func Login(context *piwigo.PiwigoContext) error {
 	return nil
 }
 
-func Logout(context *piwigo.PiwigoContext) error {
+func Logout(context *PiwigoContext) error {
 	logrus.Debugf("Logging out from %s", context.Url)
 
 	formData := url.Values{}
@@ -70,7 +98,7 @@ func Logout(context *piwigo.PiwigoContext) error {
 	return nil
 }
 
-func GetStatus(context *piwigo.PiwigoContext) (*GetStatusResponse, error) {
+func GetStatus(context *PiwigoContext) (*GetStatusResponse, error) {
 	logrus.Debugln("Getting current login state...")
 
 	formData := url.Values{}

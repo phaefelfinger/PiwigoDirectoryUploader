@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
-	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo/authentication"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -50,7 +49,7 @@ func Run() {
 		logErrorAndExit(err, 6)
 	}
 
-	_ = authentication.Logout(context.Piwigo)
+	_ = piwigo.Logout(context.Piwigo)
 }
 
 func configureContext() (*appContext, error) {
@@ -81,7 +80,7 @@ func configureContext() (*appContext, error) {
 
 func loginToPiwigoAndConfigureContext(context *appContext) error {
 	logrus.Infoln("Logging in to piwigo and getting chunk size configuration for uploads")
-	err := authentication.Login(context.Piwigo)
+	err := piwigo.Login(context.Piwigo)
 	if err != nil {
 		return err
 	}
@@ -89,7 +88,7 @@ func loginToPiwigoAndConfigureContext(context *appContext) error {
 }
 
 func initializeUploadChunkSize(context *appContext) error {
-	userStatus, err := authentication.GetStatus(context.Piwigo)
+	userStatus, err := piwigo.GetStatus(context.Piwigo)
 	if err != nil {
 		return err
 	}
