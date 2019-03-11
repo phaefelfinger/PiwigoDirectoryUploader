@@ -39,18 +39,18 @@ type LogoutResponse struct {
 }
 
 func Login(context *PiwigoContext) error {
-	logrus.Debugf("Logging in to %s using user %s", context.Url, context.Username)
+	logrus.Debugf("Logging in to %s using user %s", context.url, context.username)
 
-	if !strings.HasPrefix(context.Url, "https") {
-		logrus.Warnf("The server url %s does not use https! Credentials are not encrypted!", context.Url)
+	if !strings.HasPrefix(context.url, "https") {
+		logrus.Warnf("The server url %s does not use https! Credentials are not encrypted!", context.url)
 	}
 
 	formData := url.Values{}
 	formData.Set("method", "pwg.session.login")
-	formData.Set("username", context.Username)
-	formData.Set("password", context.Password)
+	formData.Set("username", context.username)
+	formData.Set("password", context.password)
 
-	response, err := context.PostForm(formData)
+	response, err := context.postForm(formData)
 	if err != nil {
 		return err
 	}
@@ -73,12 +73,12 @@ func Login(context *PiwigoContext) error {
 }
 
 func Logout(context *PiwigoContext) error {
-	logrus.Debugf("Logging out from %s", context.Url)
+	logrus.Debugf("Logging out from %s", context.url)
 
 	formData := url.Values{}
 	formData.Set("method", "pwg.session.logout")
 
-	response, err := context.PostForm(formData)
+	response, err := context.postForm(formData)
 	if err != nil {
 		return err
 	}
@@ -90,21 +90,21 @@ func Logout(context *PiwigoContext) error {
 	}
 
 	if statusResponse.Status != "ok" {
-		logrus.Errorf("Logout from %s failed", context.Url)
+		logrus.Errorf("Logout from %s failed", context.url)
 	} else {
-		logrus.Infof("Successfully logged out from %s", context.Url)
+		logrus.Infof("Successfully logged out from %s", context.url)
 	}
 
 	return nil
 }
 
-func GetStatus(context *PiwigoContext) (*GetStatusResponse, error) {
+func GetStatus(context PiwigoFormPoster) (*GetStatusResponse, error) {
 	logrus.Debugln("Getting current login state...")
 
 	formData := url.Values{}
 	formData.Set("method", "pwg.session.getStatus")
 
-	response, err := context.PostForm(formData)
+	response, err := context.postForm(formData)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func GetStatus(context *PiwigoContext) (*GetStatusResponse, error) {
 	}
 
 	if statusResponse.Status != "ok" {
-		errorMessage := fmt.Sprintf("Could not get session state from %s", context.Url)
+		errorMessage := fmt.Sprintln("Could not get session state from server")
 		logrus.Errorln(errorMessage)
 		return nil, errors.New(errorMessage)
 	}

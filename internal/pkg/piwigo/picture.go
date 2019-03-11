@@ -32,7 +32,7 @@ type imageExistResponse struct {
 	Result map[string]string `json:"result"`
 }
 
-func ImageUploadRequired(context *PiwigoContext, md5sums []string) ([]string, error) {
+func ImageUploadRequired(context PiwigoFormPoster, md5sums []string) ([]string, error) {
 	//TODO: make sure to split to multiple queries -> to honor max upload queries
 	//TODO: Make sure to return the found imageIds of the found sums to update the local image nodes
 
@@ -44,7 +44,7 @@ func ImageUploadRequired(context *PiwigoContext, md5sums []string) ([]string, er
 
 	logrus.Tracef("Looking up missing files: %s", md5sumList)
 
-	response, err := context.PostForm(formData)
+	response, err := context.postForm(formData)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +68,8 @@ func ImageUploadRequired(context *PiwigoContext, md5sums []string) ([]string, er
 	return missingFiles, nil
 }
 
-func UploadImage(context *PiwigoContext, filePath string, md5sum string, category int) (int, error) {
-	if context.ChunkSizeInKB <= 0 {
+func UploadImage(context PiwigoFormPoster, filePath string, md5sum string, category int) (int, error) {
+	if context.getChunkSizeInKB() <= 0 {
 		return 0, errors.New("Uploadchunk size is less or equal to zero. 512 is a recommendet value to begin with.")
 	}
 
@@ -79,7 +79,7 @@ func UploadImage(context *PiwigoContext, filePath string, md5sum string, categor
 	}
 
 	fileSizeInKB := fileInfo.Size() / 1024
-	logrus.Infof("Uploading %s using chunksize of %d KB and total size of %d KB", filePath, context.ChunkSizeInKB, fileSizeInKB)
+	logrus.Infof("Uploading %s using chunksize of %d KB and total size of %d KB", filePath, context.getChunkSizeInKB(), fileSizeInKB)
 
 	err = uploadImageChunks(filePath, context, fileSizeInKB, md5sum)
 	if err != nil {
@@ -94,7 +94,7 @@ func UploadImage(context *PiwigoContext, filePath string, md5sum string, categor
 	return imageId, nil
 }
 
-func uploadImageChunks(filePath string, context *PiwigoContext, fileSizeInKB int64, md5sum string) error {
+func uploadImageChunks(filePath string, context PiwigoFormPoster, fileSizeInKB int64, md5sum string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -102,8 +102,9 @@ func uploadImageChunks(filePath string, context *PiwigoContext, fileSizeInKB int
 	defer file.Close()
 
 	reader := bufio.NewReader(file)
-	buffer := make([]byte, context.ChunkSizeInKB*1024)
-	numberOfChunks := (fileSizeInKB / int64(context.ChunkSizeInKB)) + 1
+	bufferSize := 1024 * context.getChunkSizeInKB()
+	buffer := make([]byte, bufferSize)
+	numberOfChunks := (fileSizeInKB / int64(context.getChunkSizeInKB())) + 1
 	currentChunk := int64(0)
 
 	for {
@@ -130,7 +131,7 @@ func uploadImageChunks(filePath string, context *PiwigoContext, fileSizeInKB int
 	return nil
 }
 
-func uploadImageChunk(context *PiwigoContext, base64chunk string, md5sum string, position int64) error {
+func uploadImageChunk(context PiwigoFormPoster, base64chunk string, md5sum string, position int64) error {
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.addChunk")
 	formData.Set("data", base64chunk)
@@ -141,7 +142,7 @@ func uploadImageChunk(context *PiwigoContext, base64chunk string, md5sum string,
 
 	logrus.Tracef("Uploading chunk %d of file with sum %s", position, md5sum)
 
-	response, err := context.PostForm(formData)
+	response, err := context.postForm(formData)
 	if err != nil {
 		return err
 	}
@@ -161,7 +162,7 @@ func uploadImageChunk(context *PiwigoContext, base64chunk string, md5sum string,
 	return nil
 }
 
-func uploadImageFinal(context *PiwigoContext, originalFilename string, md5sum string, categoryId int) (int, error) {
+func uploadImageFinal(context PiwigoFormPoster, originalFilename string, md5sum string, categoryId int) (int, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.add")
 	formData.Set("original_sum", md5sum)
@@ -171,7 +172,7 @@ func uploadImageFinal(context *PiwigoContext, originalFilename string, md5sum st
 
 	logrus.Debugf("Finalizing upload of file %s with sum %s to category %d", originalFilename, md5sum, categoryId)
 
-	response, err := context.PostForm(formData)
+	response, err := context.postForm(formData)
 	if err != nil {
 		return 0, err
 	}

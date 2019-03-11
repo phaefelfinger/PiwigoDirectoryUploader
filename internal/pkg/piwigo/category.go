@@ -50,12 +50,12 @@ type createCategoryResponse struct {
 	} `json:"result"`
 }
 
-func GetAllCategories(context *PiwigoContext) (map[string]*PiwigoCategory, error) {
+func GetAllCategories(context PiwigoFormPoster) (map[string]*PiwigoCategory, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.categories.getList")
 	formData.Set("recursive", "true")
 
-	response, err := context.PostForm(formData)
+	response, err := context.postForm(formData)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func buildCategoryKeys(categories map[int]*PiwigoCategory) {
 	}
 }
 
-func CreateCategory(context *PiwigoContext, parentId int, name string) (int, error) {
+func CreateCategory(context PiwigoFormPoster, parentId int, name string) (int, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.categories.add")
 	formData.Set("name", name)
@@ -129,7 +129,7 @@ func CreateCategory(context *PiwigoContext, parentId int, name string) (int, err
 		formData.Set("parent", fmt.Sprint(parentId))
 	}
 
-	response, err := context.PostForm(formData)
+	response, err := context.postForm(formData)
 	if err != nil {
 		return 0, err
 	}
@@ -146,7 +146,7 @@ func CreateCategory(context *PiwigoContext, parentId int, name string) (int, err
 		return 0, errors.New("Could not create category")
 	}
 
-	logrus.Infof("Successfully got all categories from %s", context.Url)
+	logrus.Infof("Successfully got all categories from server...")
 
 	return createResponse.Result.ID, nil
 }

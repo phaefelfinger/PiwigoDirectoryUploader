@@ -3,7 +3,6 @@ package app
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
@@ -70,12 +69,9 @@ func configureContext() (*appContext, error) {
 	context := new(appContext)
 	context.LocalRootPath = *imagesRootPath
 	context.Piwigo = new(piwigo.PiwigoContext)
-	context.Piwigo.Url = fmt.Sprintf("%s/ws.php?format=json", *piwigoUrl)
-	context.Piwigo.Username = *piwigoUser
-	context.Piwigo.Password = *piwigoPassword
-	context.Piwigo.ChunkSizeInKB = *piwigoUploadChunkSizeInKB
+	err := context.Piwigo.Initialize(*piwigoUrl, *piwigoUser, *piwigoPassword, *piwigoUploadChunkSizeInKB)
 
-	return context, nil
+	return context, err
 }
 
 func loginToPiwigoAndConfigureContext(context *appContext) error {
