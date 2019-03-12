@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"flag"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
@@ -11,6 +10,7 @@ import (
 
 var (
 	imagesRootPath            = flag.String("imagesRootPath", "", "This is the images root path that should be mirrored to piwigo.")
+	sqliteDb                  = flag.String("sqliteDb", "", "The connection string to the sql lite database file.")
 	piwigoUrl                 = flag.String("piwigoUrl", "", "The root url without tailing slash to your piwigo installation.")
 	piwigoUser                = flag.String("piwigoUser", "", "The username to use during sync.")
 	piwigoPassword            = flag.String("piwigoPassword", "", "This is password to the given username.")
@@ -18,17 +18,17 @@ var (
 )
 
 func Run() {
-	context, err := configureContext()
+	context, err := createAppContext()
 	if err != nil {
 		logErrorAndExit(err, 1)
 	}
 
-	err = loginToPiwigoAndConfigureContext(context)
+	err = context.piwigo.LoginToPiwigoAndConfigureContext()
 	if err != nil {
 		logErrorAndExit(err, 2)
 	}
 
-	filesystemNodes, err := localFileStructure.ScanLocalFileStructure(context.LocalRootPath)
+	filesystemNodes, err := localFileStructure.ScanLocalFileStructure(context.localRootPath)
 	if err != nil {
 		logErrorAndExit(err, 3)
 	}
@@ -48,49 +48,7 @@ func Run() {
 		logErrorAndExit(err, 6)
 	}
 
-	_ = piwigo.Logout(context.Piwigo)
-}
-
-func configureContext() (*appContext, error) {
-	logrus.Infoln("Preparing application context and configuration")
-
-	if *piwigoUrl == "" {
-		return nil, errors.New("missing piwigo url!")
-	}
-
-	if *piwigoUser == "" {
-		return nil, errors.New("missing piwigo user!")
-	}
-
-	if *piwigoPassword == "" {
-		return nil, errors.New("missing piwigo password!")
-	}
-
-	context := new(appContext)
-	context.LocalRootPath = *imagesRootPath
-	context.Piwigo = new(piwigo.PiwigoContext)
-	err := context.Piwigo.Initialize(*piwigoUrl, *piwigoUser, *piwigoPassword, *piwigoUploadChunkSizeInKB)
-
-	return context, err
-}
-
-func loginToPiwigoAndConfigureContext(context *appContext) error {
-	logrus.Infoln("Logging in to piwigo and getting chunk size configuration for uploads")
-	err := piwigo.Login(context.Piwigo)
-	if err != nil {
-		return err
-	}
-	return initializeUploadChunkSize(context)
-}
-
-func initializeUploadChunkSize(context *appContext) error {
-	userStatus, err := piwigo.GetStatus(context.Piwigo)
-	if err != nil {
-		return err
-	}
-	context.ChunkSizeBytes = userStatus.Result.UploadFormChunkSize * 1024
-	logrus.Debugln(context.ChunkSizeBytes)
-	return nil
+	_ = piwigo.Logout(context.piwigo)
 }
 
 func logErrorAndExit(err error, exitCode int) {

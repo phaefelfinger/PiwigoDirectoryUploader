@@ -47,6 +47,15 @@ func (context *PiwigoContext) Initialize(baseUrl string, username string, passwo
 	return nil
 }
 
+func (context *PiwigoContext) LoginToPiwigoAndConfigureContext() error {
+	logrus.Infoln("Logging in to piwigo and getting chunk size configuration for uploads")
+	err := Login(context)
+	if err != nil {
+		return err
+	}
+	return initializeUploadChunkSize(context)
+}
+
 func (context *PiwigoContext) getChunkSizeInKB() int {
 	return context.chunkSizeInKB
 }
@@ -71,4 +80,14 @@ func (context *PiwigoContext) initializeCookieJarIfRequired() {
 	options := cookiejar.Options{}
 	jar, _ := cookiejar.New(&options)
 	context.Cookies = jar
+}
+
+func initializeUploadChunkSize(context *PiwigoContext) error {
+	userStatus, err := GetStatus(context)
+	if err != nil {
+		return err
+	}
+	context.chunkSizeInKB = userStatus.Result.UploadFormChunkSize * 1024
+	logrus.Debugf("Got chunksize of %d KB from server.", context.chunkSizeInKB)
+	return nil
 }

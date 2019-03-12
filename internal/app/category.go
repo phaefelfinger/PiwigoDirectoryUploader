@@ -12,7 +12,7 @@ import (
 
 func getAllCategoriesFromServer(context *appContext) (map[string]*piwigo.PiwigoCategory, error) {
 	logrus.Debugln("Starting GetAllCategories")
-	categories, err := piwigo.GetAllCategories(context.Piwigo)
+	categories, err := piwigo.GetAllCategories(context.piwigo)
 	return categories, err
 }
 
@@ -66,7 +66,7 @@ func createMissingCategories(context *appContext, missingCategories []string, ex
 		}
 
 		// create category on piwigo
-		id, err := piwigo.CreateCategory(context.Piwigo, parentId, name)
+		id, err := piwigo.CreateCategory(context.piwigo, parentId, name)
 		if err != nil {
 			return errors.New(fmt.Sprintf("Could not create category on piwigo: %s", err))
 		}

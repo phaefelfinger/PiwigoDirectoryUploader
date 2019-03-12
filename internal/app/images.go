@@ -40,7 +40,7 @@ func findMissingImages(context *appContext, imageFiles []*localFileStructure.Ima
 		files = append(files, file.Md5Sum)
 	}
 
-	misingSums, err := piwigo.ImageUploadRequired(context.Piwigo, files)
+	misingSums, err := piwigo.ImageUploadRequired(context.piwigo, files)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageN
 	for _, file := range missingFiles {
 		categoryId := existingCategories[file.CategoryName].Id
 
-		imageId, err := piwigo.UploadImage(context.Piwigo, file.Path, file.Md5Sum, categoryId)
+		imageId, err := piwigo.UploadImage(context.piwigo, file.Path, file.Md5Sum, categoryId)
 		if err != nil {
 			return err
 		}
