@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+type ImageNode struct {
+	Path         string
+	CategoryName string
+	ModTime      time.Time
+	Md5Sum       string
+	ImageId      int
+}
+
 func GetImageList(fileSystem map[string]*FilesystemNode) ([]*ImageNode, error) {
 	logrus.Debugln("Starting GetImageList to prepare local image metadata.")
 

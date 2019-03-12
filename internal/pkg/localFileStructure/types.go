@@ -16,11 +16,3 @@ type FilesystemNode struct {
 func (n *FilesystemNode) String() string {
 	return fmt.Sprintf("FilesystemNode: %s", n.Path)
 }
-
-type ImageNode struct {
-	Path         string
-	CategoryName string
-	ModTime      time.Time
-	Md5Sum       string
-	ImageId      int
-}
