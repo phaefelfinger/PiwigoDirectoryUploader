@@ -52,7 +52,7 @@ func GetImageList(fileSystem map[string]*FilesystemNode) ([]*ImageNode, error) {
 	case <-finished:
 	case err := <-errChannel:
 		if err != nil {
-			logrus.Errorf("Error during local image processing: %S", err)
+			logrus.Errorf("Error during local image processing: %s", err)
 			return nil, err
 		}
 	}

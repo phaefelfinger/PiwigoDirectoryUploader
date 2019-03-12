@@ -66,7 +66,7 @@ func (context *PiwigoContext) postForm(formData url.Values) (resp *http.Response
 	client := http.Client{Jar: context.Cookies}
 	response, err := client.PostForm(context.url, formData)
 	if err != nil {
-		logrus.Errorln("The HTTP request failed with error %s", err)
+		logrus.Errorf("The HTTP request failed with error %s", err)
 		return nil, err
 	}
 	return response, nil
