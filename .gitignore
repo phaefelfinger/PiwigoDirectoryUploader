@@ -27,7 +27,7 @@ _testmain.go
 .idea/
 *.log
 
-test/
+testImages/
 
 devconfig.ini
 /main

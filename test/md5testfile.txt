@@ -1,0 +1,1 @@
+This is a md5sum testfile to check the md5 wrapping code
