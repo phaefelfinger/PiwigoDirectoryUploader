@@ -6,7 +6,20 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
+
+type FilesystemNode struct {
+	Key     string
+	Path    string
+	Name    string
+	IsDir   bool
+	ModTime time.Time
+}
+
+func (n *FilesystemNode) String() string {
+	return fmt.Sprintf("FilesystemNode: %s", n.Path)
+}
 
 func ScanLocalFileStructure(path string) (map[string]*FilesystemNode, error) {
 	fullPathRoot, err := filepath.Abs(path)
