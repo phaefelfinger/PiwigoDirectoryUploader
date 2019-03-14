@@ -20,7 +20,7 @@ func (c *appContext) UseMetadataStore(connectionString string) error {
 
 	logrus.Infof("Using SQL Lite data store with '%s'", connectionString)
 	c.dataStore = localDataStore{}
-	err := c.dataStore.Open(connectionString)
+	err := c.dataStore.Initialize(connectionString)
 
 	return err
 }
