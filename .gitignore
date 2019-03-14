@@ -27,7 +27,7 @@ _testmain.go
 .idea/
 *.log
 
+# ignore local test data and folders
 testImages/
-
 devconfig.ini
-/main
+localstate.db
