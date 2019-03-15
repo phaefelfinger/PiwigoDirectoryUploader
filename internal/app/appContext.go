@@ -7,10 +7,11 @@ import (
 )
 
 type appContext struct {
+	// think again if this is a good idea to have such a context!
 	piwigo        *piwigo.PiwigoContext
+	dataStore     *localDataStore
 	sessionId     string
 	localRootPath string
-	dataStore     localDataStore
 }
 
 func (c *appContext) UseMetadataStore(connectionString string) error {
@@ -19,7 +20,7 @@ func (c *appContext) UseMetadataStore(connectionString string) error {
 	}
 
 	logrus.Infof("Using SQL Lite data store with '%s'", connectionString)
-	c.dataStore = localDataStore{}
+	c.dataStore = &localDataStore{}
 	err := c.dataStore.Initialize(connectionString)
 
 	return err
