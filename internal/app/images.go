@@ -9,6 +9,26 @@ import (
 
 func synchronizeImages(context *appContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*piwigo.PiwigoCategory) error {
 
+	// to make use of the new local data store, we have to rethink and refactor the whole local detection process
+
+	// extend the storage of the images to keep track of upload state
+
+	// TBD: How to deal with updates -> delete / upload all based on md5 sums
+
+	// STEP 1 - update and sync local datastore with filesystem
+	// - walk through all files of the fileSystem map
+	// - get file metadata from filesystem (date, filename, dir, modtime etc.)
+	// - recalculate md5 sum if file changed referring to the stored record (reduces load after first calculation a lot)
+	// - mark metadata as upload required if changed or new
+
+	// STEP 2 - get file states from piwigo (pwg.images.checkFiles)
+	// - get upload status of md5 sum from piwigo for all marked to upload
+	// - check if category has to be assigned (image possibly added to two albums -> only uploaded once but assigned multiple times)
+
+	// STEP 3: Upload missing images
+	// - upload file in chunks
+	// - assign image to category
+
 	imageFiles, err := localFileStructure.GetImageList(fileSystem)
 	if err != nil {
 		return err
@@ -40,13 +60,13 @@ func findMissingImages(context *appContext, imageFiles []*localFileStructure.Ima
 		files = append(files, file.Md5Sum)
 	}
 
-	misingSums, err := piwigo.ImageUploadRequired(context.piwigo, files)
+	missingSums, err := piwigo.ImageUploadRequired(context.piwigo, files)
 	if err != nil {
 		return nil, err
 	}
 
-	missingFiles := make([]*localFileStructure.ImageNode, 0, len(misingSums))
-	for _, sum := range misingSums {
+	missingFiles := make([]*localFileStructure.ImageNode, 0, len(missingSums))
+	for _, sum := range missingSums {
 		file := md5map[sum]
 		logrus.Infof("Found missing file %s", file.Path)
 		missingFiles = append(missingFiles, file)
