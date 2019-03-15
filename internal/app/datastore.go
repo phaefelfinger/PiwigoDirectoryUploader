@@ -3,10 +3,13 @@ package app
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
+	"github.com/sirupsen/logrus"
 	"time"
 )
+
+var ErrorRecordNotFound = errors.New("Record not found")
 
 type ImageMetaData struct {
 	ImageId           int
@@ -19,11 +22,12 @@ type ImageMetaData struct {
 	CategoryId        int
 }
 
-type ImageMetadataLoader interface {
-	GetImageMetadata(relativePath string) (ImageMetaData, error)
+func (img *ImageMetaData) String() string {
+	return fmt.Sprintf("ImageMetaData{ImageId:%d, PiwigoId:%d, CategoryId:%d, RelPath:%s, File:%s, Md5:%s, Change:%sS, catpath:%s}", img.ImageId, img.PiwigoId, img.CategoryId, img.RelativeImagePath, img.Filename, img.Md5Sum, img.LastChange.String(), img.CategoryPath)
 }
 
-type ImageMetadataSaver interface {
+type ImageMetadataProvider interface {
+	GetImageMetadata(relativePath string) (ImageMetaData, error)
 	SaveImageMetadata(m ImageMetaData) error
 }
 
@@ -50,68 +54,84 @@ func (d *localDataStore) Initialize(connectionString string) error {
 }
 
 func (d *localDataStore) GetImageMetadata(relativePath string) (ImageMetaData, error) {
+	logrus.Debugf("Query image metadata for file %s", relativePath)
+	img := ImageMetaData{}
+
 	db, err := d.openDatabase()
 	if err != nil {
-		return ImageMetaData{}, err
+		return img, err
 	}
 	defer db.Close()
 
-	tx, err := db.Begin()
+	stmt, err := db.Prepare("SELECT imageId, piwigoId, relativePath, fileName, md5sum, lastChanged, categoryPath, categoryId FROM image WHERE relativePath = ?")
 	if err != nil {
-		return ImageMetaData{}, err
+		return img, err
 	}
 
-	//TODO: select entry by path
-	//stmt, err := tx.Prepare("select * from image WHERE relativePath = '?'")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-
-	err = tx.Commit()
+	rows, err := stmt.Query(relativePath)
 	if err != nil {
-		log.Fatal(err)
+		return img, err
 	}
+	defer rows.Close()
 
-	return ImageMetaData{}, nil
-}
-
-func (d *localDataStore) SaveImageMetadata(m ImageMetaData) error {
-	db, err := d.openDatabase()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-
-	if m.ImageId <= 0 {
-		err = d.insertImageMetaData(tx, m)
+	if rows.Next() {
+		err = rows.Scan(&img.ImageId, &img.PiwigoId, &img.RelativeImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryId)
 		if err != nil {
-			return err
+			return img, err
 		}
 	} else {
-		// TODO: update existing entry
+		return img, ErrorRecordNotFound
 	}
+	err = rows.Err()
 
-	err = tx.Commit()
-	return err
+	return img, err
 }
 
-func (d *localDataStore) insertImageMetaData(tx *sql.Tx, m ImageMetaData) error {
+func (d *localDataStore) SaveImageMetadata(img ImageMetaData) error {
+	logrus.Debugf("Saving imagemetadata: %s", img.String())
+	db, err := d.openDatabase()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	if img.ImageId <= 0 {
+		err = d.insertImageMetaData(tx, img)
+	} else {
+		err = d.updateImageMetaData(tx, img)
+	}
+
+	if err != nil {
+		logrus.Errorf("Rolling back transaction for metadata of %s", img.RelativeImagePath)
+		errTx := tx.Rollback()
+		if errTx != nil {
+			logrus.Errorf("Rollback of transaction for metadata of %s failed!", img.RelativeImagePath)
+		}
+		return err
+	}
+
+	logrus.Debugf("Commiting metadata for image %s", img.String())
+	return tx.Commit()
+}
+
+func (d *localDataStore) insertImageMetaData(tx *sql.Tx, data ImageMetaData) error {
 	stmt, err := tx.Prepare("INSERT INTO image (piwigoId, relativePath, fileName, md5sum, lastChanged, categoryPath, categoryId) VALUES (?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(m.PiwigoId, m.RelativeImagePath, m.Filename, m.Md5Sum, m.LastChange, m.CategoryPath, m.CategoryId)
+	_, err = stmt.Exec(data.PiwigoId, data.RelativeImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId)
 	return err
 }
 
 func (d *localDataStore) openDatabase() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", d.connectionString)
 	if err != nil {
+		logrus.Warnf("Could not open database %s", d.connectionString)
 		return nil, err
 	}
 	db.SetMaxOpenConns(1)
@@ -121,7 +141,7 @@ func (d *localDataStore) openDatabase() (*sql.DB, error) {
 
 func (d *localDataStore) createTablesIfNeeded(db *sql.DB) error {
 	_, err := db.Exec("CREATE TABLE IF NOT EXISTS image (" +
-		"imageId INTEGER PRIMARY KEY AUTOINCREMENT," +
+		"imageId INTEGER PRIMARY KEY," +
 		"piwigoId INTEGER NULL," +
 		"relativePath NVARCHAR(1000) NOT NULL," +
 		"fileName NVARCHAR(255) NOT NULL," +
@@ -130,5 +150,19 @@ func (d *localDataStore) createTablesIfNeeded(db *sql.DB) error {
 		"categoryPath NVARCHAR(1000) NOT NULL," +
 		"categoryId INTEGER NULL" +
 		");")
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS UX_ImageRelativePath ON image (relativePath);")
+	return err
+}
+
+func (d *localDataStore) updateImageMetaData(tx *sql.Tx, data ImageMetaData) error {
+	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ?, relativePath = ?, fileName = ?, md5sum = ?, lastChanged = ?, categoryPath = ?, categoryId = ? WHERE imageId = ?")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(data.PiwigoId, data.RelativeImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId, data.ImageId)
 	return err
 }
