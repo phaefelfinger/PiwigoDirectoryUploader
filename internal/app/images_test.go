@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"testing"
 	"time"
@@ -160,6 +161,25 @@ func TestSynchronizeLocalImageMetadataShouldNotProcessDirectories(t *testing.T) 
 	}
 }
 
+func TestSynchronizePiwigoMetadata(t *testing.T) {
+	db := NewtestStore()
+	db.savedMetadata["2019/shooting1/abc.jpg"] = ImageMetaData{
+		Md5Sum:            "2019/shooting1/abc.jpg",
+		RelativeImagePath: "2019/shooting1/abc.jpg",
+		UploadRequired:    false,
+		LastChange:        time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC),
+		Filename:          "abc.jpg",
+	}
+
+
+	// execute the sync metadata based on the file system results
+	//err := synchronizeLocalImageMetadata( db)
+	//if err != nil {
+	//	t.Error(err)
+	//}
+	t.FailNow()
+}
+
 // test metadata store to store save the metadat and simulate the database
 type testStore struct {
 	savedMetadata map[string]ImageMetaData
@@ -180,6 +200,10 @@ func (s *testStore) GetImageMetadata(relativePath string) (ImageMetaData, error)
 func (s *testStore) SaveImageMetadata(m ImageMetaData) error {
 	s.savedMetadata[m.RelativeImagePath] = m
 	return nil
+}
+
+func (d *testStore) GetImageMetadataToUpload() ([]*ImageMetaData, error) {
+	return nil, errors.New("N/A")
 }
 
 // to make the sync testable, we pass in a simple mock that returns the filepath as checksum

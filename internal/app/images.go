@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
@@ -18,6 +19,7 @@ func synchronizeLocalImageMetadata(metadataStorage ImageMetadataProvider, fileSy
 	// - get file metadata from filesystem (date, filename, dir, modtime etc.)
 	// - recalculate md5 sum if file changed referring to the stored record (reduces load after first calculation a lot)
 	// - mark metadata as upload required if changed or new
+	logrus.Debugf("Starting synchronizeLocalImageMetadata")
 
 	logrus.Info("Synchronizing local image metadata database with local available images")
 
@@ -58,12 +60,32 @@ func synchronizeLocalImageMetadata(metadataStorage ImageMetadataProvider, fileSy
 		}
 	}
 
+	logrus.Debugf("Finished synchronizeLocalImageMetadata")
 	return nil
 }
 
-// STEP 2 - get file states from piwigo (pwg.images.checkFiles)
-// - get upload status of md5 sum from piwigo for all marked to upload
-// - check if category has to be assigned (image possibly added to two albums -> only uploaded once but assigned multiple times)
+func synchronizePiwigoMetadata(piwigo *piwigo.PiwigoContext, metadataStorage ImageMetadataProvider) error  {
+	// STEP 2 - get file states from piwigo (pwg.images.checkFiles)
+	// - make bulk query possible
+	// - get upload status of md5 sum from piwigo for all marked to upload
+	// - build method to update database with new piwigoId by md5 sum
+	// - set UploadRequired to false and the returned piwigoid
+	// - check if category has to be assigned (image possibly added to two albums -> only uploaded once but assigned multiple times) -> implement later
+
+	logrus.Debugf("Starting synchronizePiwigoMetadata")
+	images, err := metadataStorage.GetImageMetadataToUpload()
+	if err != nil  {
+		return err
+	}
+
+	logrus.Infof("Synchronizing metadata with existing Piwigo data...")
+	for img := range images {
+		logrus.Debug(img)
+	}
+
+	logrus.Debugf("Finished synchronizePiwigoMetadata")
+	return errors.New("N/A")
+}
 
 // STEP 3: Upload missing images
 // - upload file in chunks

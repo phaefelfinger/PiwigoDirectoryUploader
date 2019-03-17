@@ -48,9 +48,14 @@ func Run() {
 		logErrorAndExit(err, 6)
 	}
 
-	err = synchronizeImages(context.piwigo, context.dataStore, categories)
+	err = synchronizePiwigoMetadata(context.piwigo, context.dataStore)
 	if err != nil {
 		logErrorAndExit(err, 7)
+	}
+
+	err = synchronizeImages(context.piwigo, context.dataStore, categories)
+	if err != nil {
+		logErrorAndExit(err, 8)
 	}
 
 	_ = piwigo.Logout(context.piwigo)
