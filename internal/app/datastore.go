@@ -24,11 +24,12 @@ type ImageMetaData struct {
 }
 
 func (img *ImageMetaData) String() string {
-	return fmt.Sprintf("ImageMetaData{ImageId:%d, PiwigoId:%d, CategoryId:%d, RelPath:%s, File:%s, Md5:%s, Change:%sS, catpath:%s}", img.ImageId, img.PiwigoId, img.CategoryId, img.RelativeImagePath, img.Filename, img.Md5Sum, img.LastChange.String(), img.CategoryPath)
+	return fmt.Sprintf("ImageMetaData{ImageId:%d, PiwigoId:%d, CategoryId:%d, RelPath:%s, File:%s, Md5:%s, Change:%sS, catpath:%s, UploadRequired: %t}", img.ImageId, img.PiwigoId, img.CategoryId, img.RelativeImagePath, img.Filename, img.Md5Sum, img.LastChange.String(), img.CategoryPath, img.UploadRequired)
 }
 
 type ImageMetadataProvider interface {
 	GetImageMetadata(relativePath string) (ImageMetaData, error)
+	GetImageMetadataToUpload() ([]*ImageMetaData, error)
 	SaveImageMetadata(m ImageMetaData) error
 }
 
@@ -76,7 +77,7 @@ func (d *localDataStore) GetImageMetadata(relativePath string) (ImageMetaData, e
 	defer rows.Close()
 
 	if rows.Next() {
-		err = rows.Scan(&img.ImageId, &img.PiwigoId, &img.RelativeImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryId, &img.UploadRequired)
+		err = ReadImageMetadataFromRow(rows, &img)
 		if err != nil {
 			return img, err
 		}
@@ -86,6 +87,40 @@ func (d *localDataStore) GetImageMetadata(relativePath string) (ImageMetaData, e
 	err = rows.Err()
 
 	return img, err
+}
+
+func (d *localDataStore) GetImageMetadataToUpload() ([]*ImageMetaData, error) {
+	logrus.Tracef("Query all image metadata that represent files queued to upload")
+
+	db, err := d.openDatabase()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT imageId, piwigoId, relativePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired FROM image WHERE uploadRequired = 1")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	images := []*ImageMetaData{}
+	for rows.Next() {
+		img := &ImageMetaData{}
+		err = ReadImageMetadataFromRow(rows, img)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, img)
+	}
+	err = rows.Err()
+
+	return images, err
+}
+
+func ReadImageMetadataFromRow(rows *sql.Rows, img *ImageMetaData) error {
+	err := rows.Scan(&img.ImageId, &img.PiwigoId, &img.RelativeImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryId, &img.UploadRequired)
+	return err
 }
 
 func (d *localDataStore) SaveImageMetadata(img ImageMetaData) error {

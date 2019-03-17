@@ -40,6 +40,33 @@ func TestSaveAndLoadMetadata(t *testing.T) {
 	cleanupDatabase(t)
 }
 
+func TestSaveAndQueryForUploadRecords(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+
+	filePath := "blah/foo/bar.jpg"
+	img := getExampleImageMetadata(filePath)
+
+	saveImageShouldNotFail("toupload", dataStore, img, t)
+	img.ImageId = 1
+
+	images, err := dataStore.GetImageMetadataToUpload()
+	if err != nil {
+		t.Fatalf("Could not query images to upload! %s", err)
+	}
+
+	if len(images)<1 {
+		t.Fatal("Did not get any saved images to upload!")
+	}
+
+	imgLoad := images[0]
+	EnsureMetadataAreEqual("toupload", img, *imgLoad, t)
+
+	cleanupDatabase(t)
+}
+
 func TestLoadMetadataNotFound(t *testing.T) {
 	if !dbinitOk {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
@@ -114,6 +141,7 @@ func getExampleImageMetadata(filePath string) ImageMetaData {
 		Filename:          "bar.jpg",
 		CategoryPath:      "blah/foo",
 		CategoryId:        100,
+		UploadRequired:    true,
 	}
 }
 
