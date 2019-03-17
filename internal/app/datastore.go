@@ -20,6 +20,7 @@ type ImageMetaData struct {
 	LastChange        time.Time
 	CategoryPath      string
 	CategoryId        int
+	UploadRequired    bool
 }
 
 func (img *ImageMetaData) String() string {
@@ -54,7 +55,7 @@ func (d *localDataStore) Initialize(connectionString string) error {
 }
 
 func (d *localDataStore) GetImageMetadata(relativePath string) (ImageMetaData, error) {
-	logrus.Debugf("Query image metadata for file %s", relativePath)
+	logrus.Tracef("Query image metadata for file %s", relativePath)
 	img := ImageMetaData{}
 
 	db, err := d.openDatabase()
@@ -63,7 +64,7 @@ func (d *localDataStore) GetImageMetadata(relativePath string) (ImageMetaData, e
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("SELECT imageId, piwigoId, relativePath, fileName, md5sum, lastChanged, categoryPath, categoryId FROM image WHERE relativePath = ?")
+	stmt, err := db.Prepare("SELECT imageId, piwigoId, relativePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired FROM image WHERE relativePath = ?")
 	if err != nil {
 		return img, err
 	}
@@ -75,7 +76,7 @@ func (d *localDataStore) GetImageMetadata(relativePath string) (ImageMetaData, e
 	defer rows.Close()
 
 	if rows.Next() {
-		err = rows.Scan(&img.ImageId, &img.PiwigoId, &img.RelativeImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryId)
+		err = rows.Scan(&img.ImageId, &img.PiwigoId, &img.RelativeImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryId, &img.UploadRequired)
 		if err != nil {
 			return img, err
 		}
@@ -88,7 +89,7 @@ func (d *localDataStore) GetImageMetadata(relativePath string) (ImageMetaData, e
 }
 
 func (d *localDataStore) SaveImageMetadata(img ImageMetaData) error {
-	logrus.Debugf("Saving imagemetadata: %s", img.String())
+	logrus.Tracef("Saving imagemetadata: %s", img.String())
 	db, err := d.openDatabase()
 	if err != nil {
 		return err
@@ -115,16 +116,16 @@ func (d *localDataStore) SaveImageMetadata(img ImageMetaData) error {
 		return err
 	}
 
-	logrus.Debugf("Commiting metadata for image %s", img.String())
+	logrus.Tracef("Commiting metadata for image %s", img.String())
 	return tx.Commit()
 }
 
 func (d *localDataStore) insertImageMetaData(tx *sql.Tx, data ImageMetaData) error {
-	stmt, err := tx.Prepare("INSERT INTO image (piwigoId, relativePath, fileName, md5sum, lastChanged, categoryPath, categoryId) VALUES (?,?,?,?,?,?,?)")
+	stmt, err := tx.Prepare("INSERT INTO image (piwigoId, relativePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired) VALUES (?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(data.PiwigoId, data.RelativeImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId)
+	_, err = stmt.Exec(data.PiwigoId, data.RelativeImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId, data.UploadRequired)
 	return err
 }
 
@@ -148,7 +149,8 @@ func (d *localDataStore) createTablesIfNeeded(db *sql.DB) error {
 		"md5sum NVARCHAR(50) NOT NULL," +
 		"lastChanged DATETIME NOT NULL," +
 		"categoryPath NVARCHAR(1000) NOT NULL," +
-		"categoryId INTEGER NULL" +
+		"categoryId INTEGER NULL," +
+		"uploadRequired BIT NOT NULL" +
 		");")
 	if err != nil {
 		return err
