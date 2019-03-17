@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func calculateFileCheckSums(filePath string) (string, error) {
+func CalculateFileCheckSums(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		logrus.Errorf("Could not open file %s", filePath)

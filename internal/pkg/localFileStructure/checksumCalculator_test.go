@@ -9,7 +9,7 @@ import (
 func TestCalculateFileCheckSumsWithValidFile(t *testing.T) {
 	expectedSum := "2e7c66bd6657b1a8659ba05af26a0f7e"
 
-	sum, err := calculateFileCheckSums("../../../test/md5testfile.txt")
+	sum, err := CalculateFileCheckSums("../../../test/md5testfile.txt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -23,7 +23,7 @@ func TestCalculateFileCheckSumsWithWrongPath(t *testing.T) {
 	hook := test.NewGlobal()
 	hook.Reset()
 
-	sum, err := calculateFileCheckSums("unknownPath")
+	sum, err := CalculateFileCheckSums("unknownPath")
 	if err == nil {
 		t.Error("there was no error using an invalid and unknown path.")
 	}
