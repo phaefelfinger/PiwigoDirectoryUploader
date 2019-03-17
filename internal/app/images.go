@@ -4,95 +4,136 @@ import (
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
-	"sort"
+	"path/filepath"
 )
 
-func synchronizeImages(context *appContext, fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*piwigo.PiwigoCategory) error {
+type fileChecksumCalculator func(filePath string) (string, error)
 
-	// to make use of the new local data store, we have to rethink and refactor the whole local detection process
-
-	// extend the storage of the images to keep track of upload state
-
-	// TBD: How to deal with updates -> delete / upload all based on md5 sums
-
+// to make use of the new local data store, we have to rethink and refactor the whole local detection process
+// extend the storage of the images to keep track of upload state
+// TBD: How to deal with updates -> delete / upload all based on md5 sums
+func synchronizeLocalImageMetadata(metadataStorage ImageMetadataProvider, fileSystemNodes map[string]*localFileStructure.FilesystemNode, checksumCalculator fileChecksumCalculator) error {
 	// STEP 1 - update and sync local datastore with filesystem
 	// - walk through all files of the fileSystem map
 	// - get file metadata from filesystem (date, filename, dir, modtime etc.)
 	// - recalculate md5 sum if file changed referring to the stored record (reduces load after first calculation a lot)
 	// - mark metadata as upload required if changed or new
 
-	// STEP 2 - get file states from piwigo (pwg.images.checkFiles)
-	// - get upload status of md5 sum from piwigo for all marked to upload
-	// - check if category has to be assigned (image possibly added to two albums -> only uploaded once but assigned multiple times)
+	logrus.Info("Synchronizing local image metadata database with local available images")
 
-	// STEP 3: Upload missing images
-	// - upload file in chunks
-	// - assign image to category
+	for _, file := range fileSystemNodes {
+		if file.IsDir {
+			// we are only interested in files not directories
+			continue
+		}
 
-	imageFiles, err := localFileStructure.GetImageList(fileSystem)
-	if err != nil {
-		return err
-	}
+		metadata, err := metadataStorage.GetImageMetadata(file.Key)
+		if err == ErrorRecordNotFound {
+			logrus.Debugf("No metadata for %s found. Creating new entry.", file.Key)
+			metadata = ImageMetaData{}
+			metadata.Filename = file.Name
+			metadata.RelativeImagePath = file.Key
+			metadata.CategoryPath = filepath.Dir(file.Key)
+		} else if err != nil {
+			logrus.Errorf("Could not get metadata due to trouble. Cancelling - %s", err)
+			return err
+		}
 
-	missingFiles, err := findMissingImages(context, imageFiles)
-	if err != nil {
-		return err
-	}
+		if metadata.LastChange.Equal(file.ModTime) {
+			logrus.Infof("No changed detected on file %s -> keeping current state", file.Key)
+			continue
+		}
 
-	err = uploadImages(context, missingFiles, existingCategories)
-	if err != nil {
-		return err
-	}
+		metadata.LastChange = file.ModTime
+		metadata.UploadRequired = true
+		metadata.Md5Sum, err = checksumCalculator(file.Path)
+		if err != nil {
+			logrus.Warnf("Could not calculate checksum for file %s. Skipping...", file.Path)
+			continue
+		}
 
-	logrus.Infof("Synchronized %d files.", len(missingFiles))
-
-	return nil
-}
-
-func findMissingImages(context *appContext, imageFiles []*localFileStructure.ImageNode) ([]*localFileStructure.ImageNode, error) {
-
-	logrus.Debugln("Preparing lookuplist for missing files...")
-
-	files := make([]string, 0, len(imageFiles))
-	md5map := make(map[string]*localFileStructure.ImageNode, len(imageFiles))
-	for _, file := range imageFiles {
-		md5map[file.Md5Sum] = file
-		files = append(files, file.Md5Sum)
-	}
-
-	missingSums, err := piwigo.ImageUploadRequired(context.piwigo, files)
-	if err != nil {
-		return nil, err
-	}
-
-	missingFiles := make([]*localFileStructure.ImageNode, 0, len(missingSums))
-	for _, sum := range missingSums {
-		file := md5map[sum]
-		logrus.Infof("Found missing file %s", file.Path)
-		missingFiles = append(missingFiles, file)
-	}
-
-	logrus.Infof("Found %d missing files", len(missingFiles))
-
-	return missingFiles, nil
-}
-
-func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageNode, existingCategories map[string]*piwigo.PiwigoCategory) error {
-
-	// We sort the files by path to populate per category and not random by file
-	sort.Slice(missingFiles, func(i, j int) bool {
-		return missingFiles[i].Path < missingFiles[j].Path
-	})
-
-	for _, file := range missingFiles {
-		categoryId := existingCategories[file.CategoryName].Id
-
-		imageId, err := piwigo.UploadImage(context.piwigo, file.Path, file.Md5Sum, categoryId)
+		err = metadataStorage.SaveImageMetadata(metadata)
 		if err != nil {
 			return err
 		}
-		file.ImageId = imageId
 	}
 
 	return nil
 }
+
+// STEP 2 - get file states from piwigo (pwg.images.checkFiles)
+// - get upload status of md5 sum from piwigo for all marked to upload
+// - check if category has to be assigned (image possibly added to two albums -> only uploaded once but assigned multiple times)
+
+// STEP 3: Upload missing images
+// - upload file in chunks
+// - assign image to category
+
+func synchronizeImages(piwigo *piwigo.PiwigoContext, metadataStorage ImageMetadataProvider, existingCategories map[string]*piwigo.PiwigoCategory) error {
+	//imageFiles, err := localFileStructure.GetImageList(fileSystem)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//missingFiles, err := findMissingImages(context, imageFiles)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//err = uploadImages(context, missingFiles, existingCategories)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//logrus.Infof("Synchronized %d files.", len(missingFiles))
+
+	return nil
+}
+
+//func findMissingImages(context *appContext, imageFiles []*localFileStructure.ImageNode) ([]*localFileStructure.ImageNode, error) {
+//
+//	logrus.Debugln("Preparing lookuplist for missing files...")
+//
+//	files := make([]string, 0, len(imageFiles))
+//	md5map := make(map[string]*localFileStructure.ImageNode, len(imageFiles))
+//	for _, file := range imageFiles {
+//		md5map[file.Md5Sum] = file
+//		files = append(files, file.Md5Sum)
+//	}
+//
+//	missingSums, err := piwigo.ImageUploadRequired(context.piwigo, files)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	missingFiles := make([]*localFileStructure.ImageNode, 0, len(missingSums))
+//	for _, sum := range missingSums {
+//		file := md5map[sum]
+//		logrus.Infof("Found missing file %s", file.Path)
+//		missingFiles = append(missingFiles, file)
+//	}
+//
+//	logrus.Infof("Found %d missing files", len(missingFiles))
+//
+//	return missingFiles, nil
+//}
+//
+//func uploadImages(context *appContext, missingFiles []*localFileStructure.ImageNode, existingCategories map[string]*piwigo.PiwigoCategory) error {
+//
+//	// We sort the files by path to populate per category and not random by file
+//	sort.Slice(missingFiles, func(i, j int) bool {
+//		return missingFiles[i].Path < missingFiles[j].Path
+//	})
+//
+//	for _, file := range missingFiles {
+//		categoryId := existingCategories[file.CategoryName].Id
+//
+//		imageId, err := piwigo.UploadImage(context.piwigo, file.Path, file.Md5Sum, categoryId)
+//		if err != nil {
+//			return err
+//		}
+//		file.ImageId = imageId
+//	}
+//
+//	return nil
+//}

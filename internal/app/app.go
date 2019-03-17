@@ -43,9 +43,14 @@ func Run() {
 		logErrorAndExit(err, 5)
 	}
 
-	err = synchronizeImages(context, filesystemNodes, categories)
+	err = synchronizeLocalImageMetadata(context.dataStore, filesystemNodes, localFileStructure.CalculateFileCheckSums)
 	if err != nil {
 		logErrorAndExit(err, 6)
+	}
+
+	err = synchronizeImages(context.piwigo, context.dataStore, categories)
+	if err != nil {
+		logErrorAndExit(err, 7)
 	}
 
 	_ = piwigo.Logout(context.piwigo)
