@@ -19,7 +19,7 @@ type PiwigoContext struct {
 	username      string
 	password      string
 	chunkSizeInKB int
-	Cookies       *cookiejar.Jar
+	cookies       *cookiejar.Jar
 }
 
 func (context *PiwigoContext) Initialize(baseUrl string, username string, password string, chunkSizeInKB int) error {
@@ -63,7 +63,7 @@ func (context *PiwigoContext) getChunkSizeInKB() int {
 func (context *PiwigoContext) postForm(formData url.Values) (resp *http.Response, err error) {
 	context.initializeCookieJarIfRequired()
 
-	client := http.Client{Jar: context.Cookies}
+	client := http.Client{Jar: context.cookies}
 	response, err := client.PostForm(context.url, formData)
 	if err != nil {
 		logrus.Errorf("The HTTP request failed with error %s", err)
@@ -73,13 +73,13 @@ func (context *PiwigoContext) postForm(formData url.Values) (resp *http.Response
 }
 
 func (context *PiwigoContext) initializeCookieJarIfRequired() {
-	if context.Cookies != nil {
+	if context.cookies != nil {
 		return
 	}
 
 	options := cookiejar.Options{}
 	jar, _ := cookiejar.New(&options)
-	context.Cookies = jar
+	context.cookies = jar
 }
 
 func initializeUploadChunkSize(context *PiwigoContext) error {
