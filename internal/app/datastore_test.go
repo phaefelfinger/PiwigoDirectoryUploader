@@ -119,17 +119,43 @@ func TestUpdatePiwigoIdByChecksum(t *testing.T) {
 	filePath := "blah/foo/bar.jpg"
 	img := getExampleImageMetadata(filePath)
 
-	saveImageShouldNotFail("insert", dataStore, img, t)
+	saveImageShouldNotFail("SavePiwigoIdAndUpdateUploadFlag", dataStore, img, t)
 	img.ImageId = 1
 	img.PiwigoId = 1234
+	img.UploadRequired = false
 
 	err := dataStore.SavePiwigoIdAndUpdateUploadFlag(img.Md5Sum, img.PiwigoId)
 	if err != nil {
-		t.Errorf("SavePiwigoId: Could not update piwigo id: %s", err)
+		t.Errorf("SavePiwigoIdAndUpdateUploadFlag: Could not update piwigo id: %s", err)
 	}
 
 	imgLoad := loadMetadataShouldNotFail("update", dataStore, filePath, t)
-	EnsureMetadataAreEqual("update", img, imgLoad, t)
+	EnsureMetadataAreEqual("SavePiwigoIdAndUpdateUploadFlag", img, imgLoad, t)
+
+	cleanupDatabase(t)
+}
+
+func TestUpdatePiwigoIdByChecksumFoundNoImage(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+
+	filePath := "blah/foo/bar.jpg"
+	img := getExampleImageMetadata(filePath)
+
+	saveImageShouldNotFail("SavePiwigoIdAndUpdateUploadFlag", dataStore, img, t)
+	img.ImageId = 1
+	img.PiwigoId = 0
+	img.UploadRequired = true
+
+	err := dataStore.SavePiwigoIdAndUpdateUploadFlag(img.Md5Sum, img.PiwigoId)
+	if err != nil {
+		t.Errorf("SavePiwigoIdAndUpdateUploadFlag: Could not update piwigo id: %s", err)
+	}
+
+	imgLoad := loadMetadataShouldNotFail("update", dataStore, filePath, t)
+	EnsureMetadataAreEqual("SavePiwigoIdAndUpdateUploadFlag", img, imgLoad, t)
 
 	cleanupDatabase(t)
 }
