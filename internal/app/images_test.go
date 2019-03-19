@@ -189,7 +189,7 @@ func NewtestStore() *testStore {
 	return &testStore{savedMetadata: make(map[string]ImageMetaData)}
 }
 
-func (s *testStore) GetImageMetadata(relativePath string) (ImageMetaData, error) {
+func (s *testStore) ImageMetadata(relativePath string) (ImageMetaData, error) {
 	metadata, exist := s.savedMetadata[relativePath]
 	if !exist {
 		return ImageMetaData{}, ErrorRecordNotFound
@@ -202,7 +202,7 @@ func (s *testStore) SaveImageMetadata(m ImageMetaData) error {
 	return nil
 }
 
-func (d *testStore) GetImageMetadataToUpload() ([]*ImageMetaData, error) {
+func (d *testStore) ImageMetadataToUpload() ([]*ImageMetaData, error) {
 	return nil, errors.New("N/A")
 }
 

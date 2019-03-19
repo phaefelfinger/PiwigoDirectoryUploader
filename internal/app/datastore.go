@@ -28,8 +28,8 @@ func (img *ImageMetaData) String() string {
 }
 
 type ImageMetadataProvider interface {
-	GetImageMetadata(relativePath string) (ImageMetaData, error)
-	GetImageMetadataToUpload() ([]*ImageMetaData, error)
+	ImageMetadata(relativePath string) (ImageMetaData, error)
+	ImageMetadataToUpload() ([]*ImageMetaData, error)
 	SaveImageMetadata(m ImageMetaData) error
 }
 
@@ -55,7 +55,7 @@ func (d *localDataStore) Initialize(connectionString string) error {
 	return err
 }
 
-func (d *localDataStore) GetImageMetadata(relativePath string) (ImageMetaData, error) {
+func (d *localDataStore) ImageMetadata(relativePath string) (ImageMetaData, error) {
 	logrus.Tracef("Query image metadata for file %s", relativePath)
 	img := ImageMetaData{}
 
@@ -89,7 +89,7 @@ func (d *localDataStore) GetImageMetadata(relativePath string) (ImageMetaData, e
 	return img, err
 }
 
-func (d *localDataStore) GetImageMetadataToUpload() ([]*ImageMetaData, error) {
+func (d *localDataStore) ImageMetadataToUpload() ([]*ImageMetaData, error) {
 	logrus.Tracef("Query all image metadata that represent files queued to upload")
 
 	db, err := d.openDatabase()

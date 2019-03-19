@@ -52,7 +52,7 @@ func TestSaveAndQueryForUploadRecords(t *testing.T) {
 	saveImageShouldNotFail("toupload", dataStore, img, t)
 	img.ImageId = 1
 
-	images, err := dataStore.GetImageMetadataToUpload()
+	images, err := dataStore.ImageMetadataToUpload()
 	if err != nil {
 		t.Fatalf("Could not query images to upload! %s", err)
 	}
@@ -74,7 +74,7 @@ func TestLoadMetadataNotFound(t *testing.T) {
 	dataStore := setupDatabase(t)
 
 	filePath := "blah/foo/bar.jpg"
-	imgLoad, err := dataStore.GetImageMetadata(filePath)
+	imgLoad, err := dataStore.ImageMetadata(filePath)
 	if err != ErrorRecordNotFound {
 		t.Errorf("Unexpected error on loading non existing file %s: %s", filePath, err)
 	}
@@ -118,7 +118,7 @@ func saveImageShouldNotFail(action string, dataStore *localDataStore, img ImageM
 }
 
 func loadMetadataShouldNotFail(action string, dataStore *localDataStore, filePath string, t *testing.T) ImageMetaData {
-	imgLoad, err := dataStore.GetImageMetadata(filePath)
+	imgLoad, err := dataStore.ImageMetadata(filePath)
 	if err != nil {
 		t.Errorf("%s: Could not load saved Metadata: %s - %s", action, filePath, err)
 	}

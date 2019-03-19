@@ -29,7 +29,7 @@ func synchronizeLocalImageMetadata(metadataStorage ImageMetadataProvider, fileSy
 			continue
 		}
 
-		metadata, err := metadataStorage.GetImageMetadata(file.Key)
+		metadata, err := metadataStorage.ImageMetadata(file.Key)
 		if err == ErrorRecordNotFound {
 			logrus.Debugf("No metadata for %s found. Creating new entry.", file.Key)
 			metadata = ImageMetaData{}
@@ -73,7 +73,7 @@ func synchronizePiwigoMetadata(piwigo *piwigo.PiwigoContext, metadataStorage Ima
 	// - check if category has to be assigned (image possibly added to two albums -> only uploaded once but assigned multiple times) -> implement later
 
 	logrus.Debugf("Starting synchronizePiwigoMetadata")
-	images, err := metadataStorage.GetImageMetadataToUpload()
+	images, err := metadataStorage.ImageMetadataToUpload()
 	if err != nil  {
 		return err
 	}
