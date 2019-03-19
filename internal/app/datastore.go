@@ -31,6 +31,7 @@ type ImageMetadataProvider interface {
 	ImageMetadata(relativePath string) (ImageMetaData, error)
 	ImageMetadataToUpload() ([]*ImageMetaData, error)
 	SaveImageMetadata(m ImageMetaData) error
+	SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int) error
 }
 
 type localDataStore struct {
@@ -152,6 +153,42 @@ func (d *localDataStore) SaveImageMetadata(img ImageMetaData) error {
 	}
 
 	logrus.Tracef("Commiting metadata for image %s", img.String())
+	return tx.Commit()
+}
+
+func (d *localDataStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int) error {
+	logrus.Tracef("Saving piwigo id %d for file with md5sum %s", piwigoId, md5Sum)
+	db, err := d.openDatabase()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ? WHERE md5sum = ?")
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(piwigoId, md5Sum)
+	if err != nil {
+		return err
+	}
+
+	if err != nil {
+		logrus.Errorf("Rolling back transaction for piwigo id update of file %s", md5Sum)
+		errTx := tx.Rollback()
+		if errTx != nil {
+			logrus.Errorf("Rollback of transaction for piwigo id update of file %s failed!", md5Sum)
+		}
+		return err
+	}
+
+	logrus.Tracef("Commiting piwigo id %d for file with md5sum %s", piwigoId, md5Sum)
 	return tx.Commit()
 }
 

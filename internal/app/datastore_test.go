@@ -110,6 +110,30 @@ func TestUniqueIndexOnRelativeFilePath(t *testing.T) {
 	cleanupDatabase(t)
 }
 
+func TestUpdatePiwigoIdByChecksum(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+
+	filePath := "blah/foo/bar.jpg"
+	img := getExampleImageMetadata(filePath)
+
+	saveImageShouldNotFail("insert", dataStore, img, t)
+	img.ImageId = 1
+	img.PiwigoId = 1234
+
+	err := dataStore.SavePiwigoIdAndUpdateUploadFlag(img.Md5Sum, img.PiwigoId)
+	if err != nil {
+		t.Errorf("SavePiwigoId: Could not update piwigo id: %s", err)
+	}
+
+	imgLoad := loadMetadataShouldNotFail("update", dataStore, filePath, t)
+	EnsureMetadataAreEqual("update", img, imgLoad, t)
+
+	cleanupDatabase(t)
+}
+
 func saveImageShouldNotFail(action string, dataStore *localDataStore, img ImageMetaData, t *testing.T) {
 	err := dataStore.SaveImageMetadata(img)
 	if err != nil {
