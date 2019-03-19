@@ -169,7 +169,7 @@ func (d *localDataStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId
 		return err
 	}
 
-	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ? WHERE md5sum = ?")
+	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ?, uploadRequired  = 0 WHERE md5sum = ?")
 	if err != nil {
 		return err
 	}
