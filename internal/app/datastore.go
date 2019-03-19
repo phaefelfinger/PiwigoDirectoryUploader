@@ -29,7 +29,7 @@ func (img *ImageMetaData) String() string {
 
 type ImageMetadataProvider interface {
 	ImageMetadata(relativePath string) (ImageMetaData, error)
-	ImageMetadataToUpload() ([]*ImageMetaData, error)
+	ImageMetadataToUpload() ([]ImageMetaData, error)
 	SaveImageMetadata(m ImageMetaData) error
 	SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int) error
 }
@@ -90,7 +90,7 @@ func (d *localDataStore) ImageMetadata(relativePath string) (ImageMetaData, erro
 	return img, err
 }
 
-func (d *localDataStore) ImageMetadataToUpload() ([]*ImageMetaData, error) {
+func (d *localDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 	logrus.Tracef("Query all image metadata that represent files queued to upload")
 
 	db, err := d.openDatabase()
@@ -105,14 +105,14 @@ func (d *localDataStore) ImageMetadataToUpload() ([]*ImageMetaData, error) {
 	}
 	defer rows.Close()
 
-	images := []*ImageMetaData{}
+	images := []ImageMetaData{}
 	for rows.Next() {
 		img := &ImageMetaData{}
 		err = ReadImageMetadataFromRow(rows, img)
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, img)
+		images = append(images, *img)
 	}
 	err = rows.Err()
 
@@ -233,10 +233,10 @@ func (d *localDataStore) createTablesIfNeeded(db *sql.DB) error {
 }
 
 func (d *localDataStore) updateImageMetaData(tx *sql.Tx, data ImageMetaData) error {
-	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ?, relativePath = ?, fileName = ?, md5sum = ?, lastChanged = ?, categoryPath = ?, categoryId = ? WHERE imageId = ?")
+	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ?, relativePath = ?, fileName = ?, md5sum = ?, lastChanged = ?, categoryPath = ?, categoryId = ?, uploadRequired = ? WHERE imageId = ?")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(data.PiwigoId, data.RelativeImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId, data.ImageId)
+	_, err = stmt.Exec(data.PiwigoId, data.RelativeImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId, data.UploadRequired, data.ImageId)
 	return err
 }

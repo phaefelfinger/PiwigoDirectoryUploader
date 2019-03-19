@@ -171,7 +171,6 @@ func TestSynchronizePiwigoMetadata(t *testing.T) {
 		Filename:          "abc.jpg",
 	}
 
-
 	// execute the sync metadata based on the file system results
 	//err := synchronizeLocalImageMetadata( db)
 	//if err != nil {
@@ -202,7 +201,7 @@ func (s *testStore) SaveImageMetadata(m ImageMetaData) error {
 	return nil
 }
 
-func (d *testStore) ImageMetadataToUpload() ([]*ImageMetaData, error) {
+func (d *testStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 	return nil, errors.New("N/A")
 }
 

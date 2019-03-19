@@ -90,7 +90,7 @@ func checkPiwigoForChangedImages(provider ImageMetadataProvider, piwigoCtx *piwi
 		if img.PiwigoId == 0 {
 			continue
 		}
-		state, err := piwigo.ImageCheckFile(piwigoCtx, img.PiwigoId, img.Md5Sum)
+		state, err := piwigoCtx.ImageCheckFile(img.PiwigoId, img.Md5Sum)
 		if err != nil {
 			logrus.Warnf("Error during file change check of file %s", img.RelativeImagePath)
 			continue
@@ -99,7 +99,7 @@ func checkPiwigoForChangedImages(provider ImageMetadataProvider, piwigoCtx *piwi
 		if state == piwigo.ImageStateUptodate {
 			logrus.Debugf("File %s - %d has not changed", img.RelativeImagePath, img.PiwigoId)
 			img.UploadRequired = false
-			err = provider.SaveImageMetadata(*img)
+			err = provider.SaveImageMetadata(img)
 			if err != nil {
 				logrus.Warnf("Could not save image data of image %s", img.RelativeImagePath)
 			}
@@ -111,7 +111,7 @@ func checkPiwigoForChangedImages(provider ImageMetadataProvider, piwigoCtx *piwi
 
 // This function calls piwigo and checks if the given md5sum is already present.
 // Only files without a piwigo id are used to query the server.
-func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwiCtx *piwigo.PiwigoContext) error {
+func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx *piwigo.PiwigoContext) error {
 	logrus.Infof("checking for pending files that are already on piwigo and updating piwigoids...")
 	images, err := provider.ImageMetadataToUpload()
 	if err != nil {
@@ -125,7 +125,7 @@ func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwiCtx *pi
 			files = append(files, img.Md5Sum)
 		}
 	}
-	missingResults, err := piwigo.ImagesExistOnPiwigo(piwiCtx, files)
+	missingResults, err := piwigoCtx.ImagesExistOnPiwigo(files)
 	if err != nil {
 		return err
 	}

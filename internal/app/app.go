@@ -3,7 +3,6 @@ package app
 import (
 	"flag"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
-	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -23,7 +22,7 @@ func Run() {
 		logErrorAndExit(err, 1)
 	}
 
-	err = context.piwigo.LoginToPiwigoAndConfigureContext()
+	err = context.piwigo.Login()
 	if err != nil {
 		logErrorAndExit(err, 2)
 	}
@@ -58,7 +57,7 @@ func Run() {
 	//	logErrorAndExit(err, 8)
 	//}
 
-	_ = piwigo.Logout(context.piwigo)
+	_ = context.piwigo.Logout()
 }
 
 func logErrorAndExit(err error, exitCode int) {

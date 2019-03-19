@@ -57,12 +57,12 @@ func TestSaveAndQueryForUploadRecords(t *testing.T) {
 		t.Fatalf("Could not query images to upload! %s", err)
 	}
 
-	if len(images)<1 {
+	if len(images) < 1 {
 		t.Fatal("Did not get any saved images to upload!")
 	}
 
 	imgLoad := images[0]
-	EnsureMetadataAreEqual("toupload", img, *imgLoad, t)
+	EnsureMetadataAreEqual("toupload", img, imgLoad, t)
 
 	cleanupDatabase(t)
 }
