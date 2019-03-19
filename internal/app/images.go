@@ -79,11 +79,16 @@ func synchronizePiwigoMetadata(piwigoCtx *piwigo.PiwigoContext, metadataStorage 
 
 // Check all images with upload required if they are really changed and need to be uploaded to the server.
 func checkPiwigoForChangedImages(provider ImageMetadataProvider, piwigoCtx *piwigo.PiwigoContext) error {
-	logrus.Infof("checking for pending files that are already on piwigo and updating piwigoids...")
+	logrus.Infof("Checking pending files if they really differ from the version in piwigo...")
 
 	images, err := provider.ImageMetadataToUpload()
 	if err != nil {
 		return err
+	}
+
+	if len(images) == 0 {
+		logrus.Info("There are no existing images to check for modification on the server.")
+		return nil
 	}
 
 	for _, img := range images {
@@ -118,6 +123,11 @@ func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx *
 		return err
 	}
 
+	if len(images) == 0 {
+		logrus.Info("There are no existing images to check for modification on the server.")
+		return nil
+	}
+
 	logrus.Debugln("Preparing lookuplist for missing piwigo ids...")
 	files := make([]string, 0, len(images))
 	for _, img := range images {
@@ -125,6 +135,7 @@ func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx *
 			files = append(files, img.Md5Sum)
 		}
 	}
+
 	missingResults, err := piwigoCtx.ImagesExistOnPiwigo(files)
 	if err != nil {
 		return err
