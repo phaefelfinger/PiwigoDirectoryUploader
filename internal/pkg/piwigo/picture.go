@@ -28,21 +28,58 @@ type fileAddResponse struct {
 }
 
 type imageExistResponse struct {
-	Stat   string            `json:"stat"`
+	Status string            `json:"stat"`
 	Result map[string]string `json:"result"`
 }
 
-func ImageUploadRequired(context PiwigoFormPoster, md5sums []string) ([]string, error) {
-	//TODO: make sure to split to multiple queries -> to honor max upload queries
-	//TODO: Make sure to return the found imageIds of the found sums to update the local image nodes
+type checkFilesResponse struct {
+	Status string `json:"stat"`
+	Result struct {
+		File string `json:"file"`
+	} `json:"result"`
+}
 
+const (
+	ImageStateInvalid   = -1
+	ImageStateUptodate  = 0
+	ImageStateDifferent = 1
+)
+
+func ImageCheckFile(context PiwigoFormPoster, piwigoId int, md5sum string) (int, error) {
+	formData := url.Values{}
+	formData.Set("method", "pwg.images.exist")
+	formData.Set("image_id", strconv.Itoa(piwigoId))
+	formData.Set("file_sum", md5sum)
+
+	logrus.Tracef("Checking if file %s - %d needs to be uploaded", md5sum, piwigoId)
+
+	response, err := context.postForm(formData)
+	if err != nil {
+		return ImageStateInvalid, err
+	}
+	defer response.Body.Close()
+
+	var checkFilesResponse checkFilesResponse
+	if err := json.NewDecoder(response.Body).Decode(&checkFilesResponse); err != nil {
+		logrus.Errorln(err)
+		return ImageStateInvalid, err
+	}
+
+	if checkFilesResponse.Result.File == "equals" {
+		return ImageStateUptodate, nil
+	}
+	return ImageStateDifferent, nil
+}
+
+func ImagesExistOnPiwigo(context PiwigoFormPoster, md5sums []string) (map[string]int, error) {
+	//TODO: make sure to split to multiple queries -> to honor max upload queries
 	md5sumList := strings.Join(md5sums, ",")
 
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.exist")
 	formData.Set("md5sum_list", md5sumList)
 
-	logrus.Tracef("Looking up missing files: %s", md5sumList)
+	logrus.Tracef("Looking up if files exist: %s", md5sumList)
 
 	response, err := context.postForm(formData)
 	if err != nil {
@@ -56,16 +93,24 @@ func ImageUploadRequired(context PiwigoFormPoster, md5sums []string) ([]string, 
 		return nil, err
 	}
 
-	missingFiles := make([]string, 0, len(imageExistResponse.Result))
+	existResults := make(map[string]int, len(imageExistResponse.Result))
 
 	for key, value := range imageExistResponse.Result {
 		if value == "" {
 			logrus.Tracef("Missing file with md5sum: %s", key)
-			missingFiles = append(missingFiles, key)
+			existResults[key] = 0
+		} else {
+			piwigoId, err := strconv.Atoi(value)
+			if err != nil {
+				logrus.Warnf("could not parse piwigoid of file %s", key)
+				continue
+			}
+			logrus.Tracef("Found piwigo id %d for md5sum %s", piwigoId, key)
+			existResults[key] = piwigoId
 		}
 	}
 
-	return missingFiles, nil
+	return existResults, nil
 }
 
 func UploadImage(context PiwigoFormPoster, filePath string, md5sum string, category int) (int, error) {
