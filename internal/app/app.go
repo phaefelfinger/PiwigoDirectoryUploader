@@ -53,10 +53,10 @@ func Run() {
 		logErrorAndExit(err, 7)
 	}
 
-	err = synchronizeImages(context.piwigo, context.dataStore, categories)
-	if err != nil {
-		logErrorAndExit(err, 8)
-	}
+	//err = synchronizeImages(context.piwigo, context.dataStore, categories)
+	//if err != nil {
+	//	logErrorAndExit(err, 8)
+	//}
 
 	_ = piwigo.Logout(context.piwigo)
 }

@@ -206,6 +206,10 @@ func (d *testStore) ImageMetadataToUpload() ([]*ImageMetaData, error) {
 	return nil, errors.New("N/A")
 }
 
+func (d *testStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int) error {
+	return errors.New("N/A")
+}
+
 // to make the sync testable, we pass in a simple mock that returns the filepath as checksum
 func testChecksumCalculator(file string) (string, error) {
 	return file, nil
