@@ -31,3 +31,4 @@ _testmain.go
 testImages/
 devconfig.ini
 localstate.db
+/PiwigoDirectoryUploader
