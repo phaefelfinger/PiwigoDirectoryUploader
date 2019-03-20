@@ -61,7 +61,7 @@ func synchronizeLocalImageMetadata(metadataStorage ImageMetadataProvider, fileSy
 }
 
 // This method agregates the check for files with missing piwigoids and if changed files need to be uploaded again.
-func synchronizePiwigoMetadata(piwigoCtx *piwigo.PiwigoContext, metadataStorage ImageMetadataProvider) error {
+func synchronizePiwigoMetadata(piwigoCtx piwigo.PiwigoImageApi, metadataStorage ImageMetadataProvider) error {
 	// TODO: check if category has to be assigned (image possibly added to two albums -> only uploaded once but assigned multiple times) -> implement later
 	logrus.Debugf("Starting synchronizePiwigoMetadata")
 	err := updatePiwigoIdIfAlreadyUploaded(metadataStorage, piwigoCtx)
@@ -78,7 +78,7 @@ func synchronizePiwigoMetadata(piwigoCtx *piwigo.PiwigoContext, metadataStorage 
 }
 
 // Check all images with upload required if they are really changed and need to be uploaded to the server.
-func checkPiwigoForChangedImages(provider ImageMetadataProvider, piwigoCtx *piwigo.PiwigoContext) error {
+func checkPiwigoForChangedImages(provider ImageMetadataProvider, piwigoCtx piwigo.PiwigoImageApi) error {
 	logrus.Infof("Checking pending files if they really differ from the version in piwigo...")
 
 	images, err := provider.ImageMetadataToUpload()
@@ -116,7 +116,7 @@ func checkPiwigoForChangedImages(provider ImageMetadataProvider, piwigoCtx *piwi
 
 // This function calls piwigo and checks if the given md5sum is already present.
 // Only files without a piwigo id are used to query the server.
-func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx *piwigo.PiwigoContext) error {
+func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx piwigo.PiwigoImageApi) error {
 	logrus.Infof("checking for pending files that are already on piwigo and updating piwigoids...")
 	images, err := provider.ImageMetadataToUpload()
 	if err != nil {

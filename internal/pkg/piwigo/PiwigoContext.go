@@ -13,6 +13,24 @@ import (
 	"strings"
 )
 
+type PiwigoApi interface {
+	Initialize(baseUrl string, username string, password string, chunkSizeInKB int) error
+	Login() error
+	Logout() error
+	GetStatus() (*getStatusResponse, error)
+}
+
+type PiwigoCategoryApi interface {
+	GetAllCategories() (map[string]*PiwigoCategory, error)
+	CreateCategory(parentId int, name string) (int, error)
+}
+
+type PiwigoImageApi interface {
+	ImageCheckFile(piwigoId int, md5sum string) (int, error)
+	ImagesExistOnPiwigo(md5sums []string) (map[string]int, error)
+	UploadImage(filePath string, md5sum string, category int) (int, error)
+}
+
 type PiwigoContext struct {
 	url           string
 	username      string

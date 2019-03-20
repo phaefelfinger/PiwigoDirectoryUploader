@@ -37,7 +37,7 @@ func Run() {
 		logErrorAndExit(err, 4)
 	}
 
-	err = synchronizeCategories(context, filesystemNodes, categories)
+	err = synchronizeCategories(context.piwigo, filesystemNodes, categories)
 	if err != nil {
 		logErrorAndExit(err, 5)
 	}
