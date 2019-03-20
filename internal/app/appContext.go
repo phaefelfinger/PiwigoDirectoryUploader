@@ -43,7 +43,7 @@ func (c *appContext) UsePiwigo(url string, user string, password string) error {
 	return c.piwigo.Initialize(*piwigoUrl, *piwigoUser, *piwigoPassword, *piwigoUploadChunkSizeInKB)
 }
 
-func createAppContext() (*appContext, error) {
+func newAppContext() (*appContext, error) {
 	logrus.Infoln("Preparing application context and configuration")
 
 	context := new(appContext)

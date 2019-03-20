@@ -10,9 +10,9 @@ import (
 	"sort"
 )
 
-func getAllCategoriesFromServer(context *appContext) (map[string]*piwigo.PiwigoCategory, error) {
+func getAllCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi) (map[string]*piwigo.PiwigoCategory, error) {
 	logrus.Debugln("Starting GetAllCategories")
-	categories, err := context.piwigo.GetAllCategories()
+	categories, err := piwigoApi.GetAllCategories()
 	return categories, err
 }
 

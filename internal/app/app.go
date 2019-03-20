@@ -18,7 +18,7 @@ var (
 )
 
 func Run() {
-	context, err := createAppContext()
+	context, err := newAppContext()
 	if err != nil {
 		logErrorAndExit(err, 1)
 	}
@@ -33,7 +33,7 @@ func Run() {
 		logErrorAndExit(err, 3)
 	}
 
-	categories, err := getAllCategoriesFromServer(context)
+	categories, err := getAllCategoriesFromServer(context.piwigo)
 	if err != nil {
 		logErrorAndExit(err, 4)
 	}
