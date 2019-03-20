@@ -3,15 +3,19 @@ package app
 import (
 	"errors"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"testing"
 	"time"
 )
 
 func TestSynchronizeLocalImageMetadataShouldDoNothingIfEmpty(t *testing.T) {
+	categories := make(map[string]*piwigo.PiwigoCategory)
+	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+
 	db := NewtestStore()
 	fileSystemNodes := map[string]*localFileStructure.FilesystemNode{}
 
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, testChecksumCalculator)
+	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -22,6 +26,10 @@ func TestSynchronizeLocalImageMetadataShouldDoNothingIfEmpty(t *testing.T) {
 }
 
 func TestSynchronizeLocalImageMetadataShouldAddNewMetadata(t *testing.T) {
+
+	categories := make(map[string]*piwigo.PiwigoCategory)
+	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+
 	db := NewtestStore()
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
@@ -35,7 +43,7 @@ func TestSynchronizeLocalImageMetadataShouldAddNewMetadata(t *testing.T) {
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, testChecksumCalculator)
+	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -45,8 +53,8 @@ func TestSynchronizeLocalImageMetadataShouldAddNewMetadata(t *testing.T) {
 	if !exist {
 		t.Fatal("Could not find correct metadata!")
 	}
-	if savedData.RelativeImagePath != testFileSystemNode.Key {
-		t.Errorf("relativeImagePath %s on db image metadata is not set to %s!", savedData.RelativeImagePath, testFileSystemNode.Key)
+	if savedData.FullImagePath != testFileSystemNode.Key {
+		t.Errorf("fullImagePath %s on db image metadata is not set to %s!", savedData.FullImagePath, testFileSystemNode.Key)
 	}
 	if savedData.LastChange != testFileSystemNode.ModTime {
 		t.Error("lastChange on db image metadata is not set to the right date!")
@@ -63,13 +71,17 @@ func TestSynchronizeLocalImageMetadataShouldAddNewMetadata(t *testing.T) {
 }
 
 func TestSynchronizeLocalImageMetadataShouldMarkChangedEntriesAsUploads(t *testing.T) {
+
+	categories := make(map[string]*piwigo.PiwigoCategory)
+	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+
 	db := NewtestStore()
 	db.savedMetadata["2019/shooting1/abc.jpg"] = ImageMetaData{
-		Md5Sum:            "2019/shooting1/abc.jpg",
-		RelativeImagePath: "2019/shooting1/abc.jpg",
-		UploadRequired:    false,
-		LastChange:        time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC),
-		Filename:          "abc.jpg",
+		Md5Sum:         "2019/shooting1/abc.jpg",
+		FullImagePath:  "2019/shooting1/abc.jpg",
+		UploadRequired: false,
+		LastChange:     time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC),
+		Filename:       "abc.jpg",
 	}
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
@@ -83,7 +95,7 @@ func TestSynchronizeLocalImageMetadataShouldMarkChangedEntriesAsUploads(t *testi
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, testChecksumCalculator)
+	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -103,12 +115,16 @@ func TestSynchronizeLocalImageMetadataShouldMarkChangedEntriesAsUploads(t *testi
 
 func TestSynchronizeLocalImageMetadataShouldNotMarkUnchangedFilesToUpload(t *testing.T) {
 	db := NewtestStore()
+
+	categories := make(map[string]*piwigo.PiwigoCategory)
+	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+
 	db.savedMetadata["2019/shooting1/abc.jpg"] = ImageMetaData{
-		Md5Sum:            "2019/shooting1/abc.jpg",
-		RelativeImagePath: "2019/shooting1/abc.jpg",
-		UploadRequired:    false,
-		LastChange:        time.Date(2019, 01, 01, 01, 0, 0, 0, time.UTC),
-		Filename:          "abc.jpg",
+		Md5Sum:         "2019/shooting1/abc.jpg",
+		FullImagePath:  "2019/shooting1/abc.jpg",
+		UploadRequired: false,
+		LastChange:     time.Date(2019, 01, 01, 01, 0, 0, 0, time.UTC),
+		Filename:       "abc.jpg",
 	}
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
@@ -122,7 +138,7 @@ func TestSynchronizeLocalImageMetadataShouldNotMarkUnchangedFilesToUpload(t *tes
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, testChecksumCalculator)
+	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -138,6 +154,9 @@ func TestSynchronizeLocalImageMetadataShouldNotMarkUnchangedFilesToUpload(t *tes
 }
 
 func TestSynchronizeLocalImageMetadataShouldNotProcessDirectories(t *testing.T) {
+	categories := make(map[string]*piwigo.PiwigoCategory)
+	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+
 	db := NewtestStore()
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
@@ -151,7 +170,7 @@ func TestSynchronizeLocalImageMetadataShouldNotProcessDirectories(t *testing.T) 
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, testChecksumCalculator)
+	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -164,11 +183,11 @@ func TestSynchronizeLocalImageMetadataShouldNotProcessDirectories(t *testing.T) 
 func TestSynchronizePiwigoMetadata(t *testing.T) {
 	db := NewtestStore()
 	db.savedMetadata["2019/shooting1/abc.jpg"] = ImageMetaData{
-		Md5Sum:            "2019/shooting1/abc.jpg",
-		RelativeImagePath: "2019/shooting1/abc.jpg",
-		UploadRequired:    false,
-		LastChange:        time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC),
-		Filename:          "abc.jpg",
+		Md5Sum:         "2019/shooting1/abc.jpg",
+		FullImagePath:  "2019/shooting1/abc.jpg",
+		UploadRequired: false,
+		LastChange:     time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC),
+		Filename:       "abc.jpg",
 	}
 
 	// execute the sync metadata based on the file system results
@@ -176,7 +195,7 @@ func TestSynchronizePiwigoMetadata(t *testing.T) {
 	//if err != nil {
 	//	t.Error(err)
 	//}
-	t.FailNow()
+	t.Skip("Not yet implemented!")
 }
 
 // test metadata store to store save the metadat and simulate the database
@@ -188,8 +207,8 @@ func NewtestStore() *testStore {
 	return &testStore{savedMetadata: make(map[string]ImageMetaData)}
 }
 
-func (s *testStore) ImageMetadata(relativePath string) (ImageMetaData, error) {
-	metadata, exist := s.savedMetadata[relativePath]
+func (s *testStore) ImageMetadata(fullImagePath string) (ImageMetaData, error) {
+	metadata, exist := s.savedMetadata[fullImagePath]
 	if !exist {
 		return ImageMetaData{}, ErrorRecordNotFound
 	}
@@ -197,7 +216,7 @@ func (s *testStore) ImageMetadata(relativePath string) (ImageMetaData, error) {
 }
 
 func (s *testStore) SaveImageMetadata(m ImageMetaData) error {
-	s.savedMetadata[m.RelativeImagePath] = m
+	s.savedMetadata[m.FullImagePath] = m
 	return nil
 }
 

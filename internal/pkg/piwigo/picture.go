@@ -76,13 +76,19 @@ func uploadImageChunk(context *PiwigoContext, base64chunk string, md5sum string,
 	return nil
 }
 
-func uploadImageFinal(context *PiwigoContext, originalFilename string, md5sum string, categoryId int) (int, error) {
+func uploadImageFinal(context *PiwigoContext, piwigoId int, originalFilename string, md5sum string, categoryId int) (int, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.add")
 	formData.Set("original_sum", md5sum)
 	formData.Set("original_filename", originalFilename)
 	formData.Set("name", originalFilename)
 	formData.Set("categories", strconv.Itoa(categoryId))
+
+	// when there is a image id, we are updating an existing image and need to specify the piwigo image id.
+	// if we skip the image id, a new id will be generated
+	if piwigoId > 0 {
+		formData.Set("image_id", strconv.Itoa(piwigoId))
+	}
 
 	logrus.Debugf("Finalizing upload of file %s with sum %s to category %d", originalFilename, md5sum, categoryId)
 

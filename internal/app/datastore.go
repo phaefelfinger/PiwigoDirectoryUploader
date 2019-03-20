@@ -12,23 +12,23 @@ import (
 var ErrorRecordNotFound = errors.New("Record not found")
 
 type ImageMetaData struct {
-	ImageId           int
-	PiwigoId          int
-	RelativeImagePath string
-	Filename          string
-	Md5Sum            string
-	LastChange        time.Time
-	CategoryPath      string
-	CategoryId        int
-	UploadRequired    bool
+	ImageId        int
+	PiwigoId       int
+	FullImagePath  string
+	Filename       string
+	Md5Sum         string
+	LastChange     time.Time
+	CategoryPath   string
+	CategoryId     int
+	UploadRequired bool
 }
 
 func (img *ImageMetaData) String() string {
-	return fmt.Sprintf("ImageMetaData{ImageId:%d, PiwigoId:%d, CategoryId:%d, RelPath:%s, File:%s, Md5:%s, Change:%sS, catpath:%s, UploadRequired: %t}", img.ImageId, img.PiwigoId, img.CategoryId, img.RelativeImagePath, img.Filename, img.Md5Sum, img.LastChange.String(), img.CategoryPath, img.UploadRequired)
+	return fmt.Sprintf("ImageMetaData{ImageId:%d, PiwigoId:%d, CategoryId:%d, RelPath:%s, File:%s, Md5:%s, Change:%sS, catpath:%s, UploadRequired: %t}", img.ImageId, img.PiwigoId, img.CategoryId, img.FullImagePath, img.Filename, img.Md5Sum, img.LastChange.String(), img.CategoryPath, img.UploadRequired)
 }
 
 type ImageMetadataProvider interface {
-	ImageMetadata(relativePath string) (ImageMetaData, error)
+	ImageMetadata(fullImagePath string) (ImageMetaData, error)
 	ImageMetadataToUpload() ([]ImageMetaData, error)
 	SaveImageMetadata(m ImageMetaData) error
 	SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int) error
@@ -56,8 +56,8 @@ func (d *localDataStore) Initialize(connectionString string) error {
 	return err
 }
 
-func (d *localDataStore) ImageMetadata(relativePath string) (ImageMetaData, error) {
-	logrus.Tracef("Query image metadata for file %s", relativePath)
+func (d *localDataStore) ImageMetadata(fullImagePath string) (ImageMetaData, error) {
+	logrus.Tracef("Query image metadata for file %s", fullImagePath)
 	img := ImageMetaData{}
 
 	db, err := d.openDatabase()
@@ -66,12 +66,12 @@ func (d *localDataStore) ImageMetadata(relativePath string) (ImageMetaData, erro
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("SELECT imageId, piwigoId, relativePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired FROM image WHERE relativePath = ?")
+	stmt, err := db.Prepare("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired FROM image WHERE fullImagePath = ?")
 	if err != nil {
 		return img, err
 	}
 
-	rows, err := stmt.Query(relativePath)
+	rows, err := stmt.Query(fullImagePath)
 	if err != nil {
 		return img, err
 	}
@@ -99,7 +99,7 @@ func (d *localDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT imageId, piwigoId, relativePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired FROM image WHERE uploadRequired = 1")
+	rows, err := db.Query("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired FROM image WHERE uploadRequired = 1")
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (d *localDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 }
 
 func ReadImageMetadataFromRow(rows *sql.Rows, img *ImageMetaData) error {
-	err := rows.Scan(&img.ImageId, &img.PiwigoId, &img.RelativeImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryId, &img.UploadRequired)
+	err := rows.Scan(&img.ImageId, &img.PiwigoId, &img.FullImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryId, &img.UploadRequired)
 	return err
 }
 
@@ -144,10 +144,10 @@ func (d *localDataStore) SaveImageMetadata(img ImageMetaData) error {
 	}
 
 	if err != nil {
-		logrus.Errorf("Rolling back transaction for metadata of %s", img.RelativeImagePath)
+		logrus.Errorf("Rolling back transaction for metadata of %s", img.FullImagePath)
 		errTx := tx.Rollback()
 		if errTx != nil {
-			logrus.Errorf("Rollback of transaction for metadata of %s failed!", img.RelativeImagePath)
+			logrus.Errorf("Rollback of transaction for metadata of %s failed!", img.FullImagePath)
 		}
 		return err
 	}
@@ -198,11 +198,11 @@ func (d *localDataStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId
 }
 
 func (d *localDataStore) insertImageMetaData(tx *sql.Tx, data ImageMetaData) error {
-	stmt, err := tx.Prepare("INSERT INTO image (piwigoId, relativePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired) VALUES (?,?,?,?,?,?,?,?)")
+	stmt, err := tx.Prepare("INSERT INTO image (piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired) VALUES (?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(data.PiwigoId, data.RelativeImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId, data.UploadRequired)
+	_, err = stmt.Exec(data.PiwigoId, data.FullImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId, data.UploadRequired)
 	return err
 }
 
@@ -221,7 +221,7 @@ func (d *localDataStore) createTablesIfNeeded(db *sql.DB) error {
 	_, err := db.Exec("CREATE TABLE IF NOT EXISTS image (" +
 		"imageId INTEGER PRIMARY KEY," +
 		"piwigoId INTEGER NULL," +
-		"relativePath NVARCHAR(1000) NOT NULL," +
+		"fullImagePath NVARCHAR(1000) NOT NULL," +
 		"fileName NVARCHAR(255) NOT NULL," +
 		"md5sum NVARCHAR(50) NOT NULL," +
 		"lastChanged DATETIME NOT NULL," +
@@ -233,15 +233,15 @@ func (d *localDataStore) createTablesIfNeeded(db *sql.DB) error {
 		return err
 	}
 
-	_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS UX_ImageRelativePath ON image (relativePath);")
+	_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS UX_ImageFullImagePath ON image (fullImagePath);")
 	return err
 }
 
 func (d *localDataStore) updateImageMetaData(tx *sql.Tx, data ImageMetaData) error {
-	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ?, relativePath = ?, fileName = ?, md5sum = ?, lastChanged = ?, categoryPath = ?, categoryId = ?, uploadRequired = ? WHERE imageId = ?")
+	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ?, fullImagePath = ?, fileName = ?, md5sum = ?, lastChanged = ?, categoryPath = ?, categoryId = ?, uploadRequired = ? WHERE imageId = ?")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(data.PiwigoId, data.RelativeImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId, data.UploadRequired, data.ImageId)
+	_, err = stmt.Exec(data.PiwigoId, data.FullImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId, data.UploadRequired, data.ImageId)
 	return err
 }

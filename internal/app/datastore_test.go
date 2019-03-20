@@ -103,7 +103,7 @@ func TestUniqueIndexOnRelativeFilePath(t *testing.T) {
 
 	// check if the error contains the expected column as name. If not, this indicates another problem than
 	// the expected duplicated insert error.
-	if !strings.Contains(err.Error(), "relativePath") {
+	if !strings.Contains(err.Error(), "fullImagePath") {
 		t.Errorf("Got a unexpected error on saving duplicate records: %s", err)
 	}
 
@@ -184,14 +184,14 @@ func EnsureMetadataAreEqual(action string, img ImageMetaData, imgLoad ImageMetaD
 
 func getExampleImageMetadata(filePath string) ImageMetaData {
 	return ImageMetaData{
-		RelativeImagePath: filePath,
-		PiwigoId:          1,
-		Md5Sum:            "aabbccddeeff",
-		LastChange:        time.Now().UTC(),
-		Filename:          "bar.jpg",
-		CategoryPath:      "blah/foo",
-		CategoryId:        100,
-		UploadRequired:    true,
+		FullImagePath:  filePath,
+		PiwigoId:       1,
+		Md5Sum:         "aabbccddeeff",
+		LastChange:     time.Now().UTC(),
+		Filename:       "bar.jpg",
+		CategoryPath:   "blah/foo",
+		CategoryId:     100,
+		UploadRequired: true,
 	}
 }
 

@@ -28,7 +28,7 @@ type PiwigoCategoryApi interface {
 type PiwigoImageApi interface {
 	ImageCheckFile(piwigoId int, md5sum string) (int, error)
 	ImagesExistOnPiwigo(md5sums []string) (map[string]int, error)
-	UploadImage(filePath string, md5sum string, category int) (int, error)
+	UploadImage(piwigoId int, filePath string, md5sum string, category int) (int, error)
 }
 
 type PiwigoContext struct {
@@ -220,7 +220,7 @@ func (context *PiwigoContext) ImagesExistOnPiwigo(md5sums []string) (map[string]
 	return existResults, nil
 }
 
-func (context *PiwigoContext) UploadImage(filePath string, md5sum string, category int) (int, error) {
+func (context *PiwigoContext) UploadImage(piwigoId int, filePath string, md5sum string, category int) (int, error) {
 	if context.chunkSizeInKB <= 0 {
 		return 0, errors.New("Uploadchunk size is less or equal to zero. 512 is a recommendet value to begin with.")
 	}
@@ -238,7 +238,7 @@ func (context *PiwigoContext) UploadImage(filePath string, md5sum string, catego
 		return 0, err
 	}
 
-	imageId, err := uploadImageFinal(context, fileInfo.Name(), md5sum, category)
+	imageId, err := uploadImageFinal(context, piwigoId, fileInfo.Name(), md5sum, category)
 	if err != nil {
 		return 0, err
 	}
