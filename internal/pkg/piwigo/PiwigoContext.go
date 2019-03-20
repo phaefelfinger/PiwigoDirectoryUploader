@@ -39,7 +39,7 @@ type PiwigoContext struct {
 	cookies       *cookiejar.Jar
 }
 
-func (context *PiwigoContext) Initialize(baseUrl string, username string, password string, chunkSizeInKB int) error {
+func (context *PiwigoContext) Initialize(baseUrl string, username string, password string) error {
 	if baseUrl == "" {
 		return errors.New("Please provide a valid piwigo server base URL")
 	}
@@ -52,14 +52,10 @@ func (context *PiwigoContext) Initialize(baseUrl string, username string, passwo
 		return errors.New("Please provide a valid username for the given piwigo server.")
 	}
 
-	if chunkSizeInKB < 256 {
-		return errors.New("The minimum chunksize is 256KB. Please provide a value above. Default is 512KB")
-	}
-
 	context.url = fmt.Sprintf("%s/ws.php?format=json", baseUrl)
 	context.username = username
 	context.password = password
-	context.chunkSizeInKB = chunkSizeInKB
+	context.chunkSizeInKB = 512
 
 	return nil
 }

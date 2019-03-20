@@ -40,7 +40,7 @@ func (c *appContext) UsePiwigo(url string, user string, password string) error {
 	}
 
 	c.piwigo = new(piwigo.PiwigoContext)
-	return c.piwigo.Initialize(*piwigoUrl, *piwigoUser, *piwigoPassword, *piwigoUploadChunkSizeInKB)
+	return c.piwigo.Initialize(*piwigoUrl, *piwigoUser, *piwigoPassword)
 }
 
 func newAppContext() (*appContext, error) {
