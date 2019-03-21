@@ -87,8 +87,8 @@ Usage of ./PiwigoDirectoryUploader:
 
 #### Configuration file
 
-Next you need to prepare at least one configuration file.
-You may create more than one configuration file if you have multiple Piwigo installations.
+It is also possible to use a configuration file to save the settings to be used with multiple piwigo instances.
+To use configuration files, just copy the default one and edit the parameters to your wish.
 
 ```
 cp ./configs/defaultConfig.ini ./localConfig.ini
