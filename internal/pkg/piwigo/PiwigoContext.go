@@ -1,5 +1,7 @@
 package piwigo
 
+//go:generate mockgen -destination=../mocks/mock_piwigo_context.go -package=mocks git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoApi,PiwigoCategoryApi,PiwigoImageApi
+
 import (
 	"encoding/json"
 	"errors"
