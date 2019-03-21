@@ -30,6 +30,27 @@ There are some features planned but not ready yet:
 To get the latest version, you should check out https://git.haefelfinger.net/piwigo/PiwigoDirectoryUploader.git to
 your local go source directory.
 
+### Dependencies
+
+There are some external dependencies to build the application.
+
+- logrus: This is a little logging library that is quite handy
+- iniflags: The iniflags makes handling configuration files and applications parameters quite easy.
+
+You may install these manually with the following commands or just use the command under "Build" to get all dependencies.
+
+```
+go get github.com/sirupsen/logrus
+go get github.com/vharitonsky/iniflags
+```
+
+To build the mocks there are two go:generate dependencies:
+
+```
+go get github.com/golang/mock/gomock
+go get github.com/golang/mock/mockgen
+```
+
 ### Build
 
 Get all dependencies first.
@@ -43,6 +64,12 @@ can be renamed to your favorite application name.
 
 ```
 go build cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
+```
+
+To rebuild the mocks you can simply use the following command:
+
+```
+go generate ./...
 ```
 
 ### Configuration
