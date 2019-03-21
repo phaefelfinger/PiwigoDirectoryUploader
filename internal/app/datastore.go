@@ -1,6 +1,6 @@
 package app
 
-//go:generate mockgen -destination=../pkg/mocks/mock_app_datastore.go -package=mocks git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/app ImageMetadataProvider
+//go:generate mockgen -destination=./datastore_mock_test.go -package=app git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/app ImageMetadataProvider
 
 import (
 	"database/sql"

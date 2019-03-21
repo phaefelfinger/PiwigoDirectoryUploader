@@ -184,6 +184,11 @@ func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx p
 		}
 	}
 
+	if len(files) == 0 {
+		logrus.Info("There are no images without piwigo id to check for modification on the server.")
+		return nil
+	}
+
 	missingResults, err := piwigoCtx.ImagesExistOnPiwigo(files)
 	if err != nil {
 		return err
@@ -195,5 +200,6 @@ func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx p
 			logrus.Warnf("Could not save piwigo id %d for file %s", piwigoId, md5sum)
 		}
 	}
+
 	return nil
 }

@@ -1,7 +1,5 @@
 package piwigo
 
-//go:generate mockgen -destination=../mocks/mock_piwigo_context.go -package=mocks git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoApi,PiwigoCategoryApi,PiwigoImageApi
-
 import (
 	"encoding/json"
 	"errors"
@@ -19,7 +17,6 @@ type PiwigoApi interface {
 	Initialize(baseUrl string, username string, password string, chunkSizeInKB int) error
 	Login() error
 	Logout() error
-	GetStatus() (*getStatusResponse, error)
 }
 
 type PiwigoCategoryApi interface {
@@ -104,7 +101,7 @@ func (context *PiwigoContext) Logout() error {
 	return nil
 }
 
-func (context *PiwigoContext) GetStatus() (*getStatusResponse, error) {
+func (context *PiwigoContext) getStatus() (*getStatusResponse, error) {
 	logrus.Debugln("Getting current login state...")
 
 	formData := url.Values{}
@@ -255,7 +252,7 @@ func (context *PiwigoContext) initializeCookieJarIfRequired() {
 }
 
 func (context *PiwigoContext) initializeUploadChunkSize() error {
-	userStatus, err := context.GetStatus()
+	userStatus, err := context.getStatus()
 	if err != nil {
 		return err
 	}
