@@ -39,6 +39,7 @@ type ImageMetadataProvider interface {
 	ImageMetadata(fullImagePath string) (ImageMetaData, error)
 	ImageMetadataToUpload() ([]ImageMetaData, error)
 	ImageMetadataToDelete() ([]ImageMetaData, error)
+	ImageMetadataAll() ([]ImageMetaData, error)
 	SaveImageMetadata(m ImageMetaData) error
 	SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int) error
 }
@@ -97,6 +98,35 @@ func (d *localDataStore) ImageMetadata(fullImagePath string) (ImageMetaData, err
 	err = rows.Err()
 
 	return img, err
+}
+
+func (d *localDataStore) ImageMetadataAll() ([]ImageMetaData, error) {
+	logrus.Tracef("Query all image metadata that represent files on the disk")
+
+	db, err := d.openDatabase()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired, deleteRequired FROM image")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	images := []ImageMetaData{}
+	for rows.Next() {
+		img := &ImageMetaData{}
+		err = ReadImageMetadataFromRow(rows, img)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, *img)
+	}
+	err = rows.Err()
+
+	return images, err
 }
 
 func (d *localDataStore) ImageMetadataToDelete() ([]ImageMetaData, error) {

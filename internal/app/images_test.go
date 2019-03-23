@@ -429,6 +429,10 @@ func (s *testStore) ImageMetadata(fullImagePath string) (ImageMetaData, error) {
 	return metadata, nil
 }
 
+func (d *testStore) ImageMetadataAll() ([]ImageMetaData, error) {
+	return []ImageMetaData{}, nil
+}
+
 func (s *testStore) SaveImageMetadata(m ImageMetaData) error {
 	s.savedMetadata[m.FullImagePath] = m
 	return nil

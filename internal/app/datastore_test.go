@@ -44,6 +44,37 @@ func Test_save_and_load_metadata(t *testing.T) {
 	EnsureMetadataAreEqual("update", img, imgLoad, t)
 }
 
+func Test_save_and_query_for_all_entries(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
+
+	img1 := getExampleImageMetadata("blah/foo/bar.jpg")
+
+	img2 := getExampleImageMetadata("blah/foo/bar2.jpg")
+	img2.DeleteRequired = true
+
+	saveImageShouldNotFail("allimages", dataStore, img1, t)
+	img1.ImageId = 1
+
+	saveImageShouldNotFail("allimages", dataStore, img2, t)
+	img2.ImageId = 2
+
+	images, err := dataStore.ImageMetadataAll()
+	if err != nil {
+		t.Fatalf("Could not query images to upload! %s", err)
+	}
+
+	if len(images) != 2 {
+		t.Fatalf("Got incorrect number of images (%d). Expected two.", len(images))
+	}
+
+	imgLoad := images[0]
+	EnsureMetadataAreEqual("allimages", img1, imgLoad, t)
+}
+
 func Test_save_and_query_for_upload_records(t *testing.T) {
 	if !dbinitOk {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
