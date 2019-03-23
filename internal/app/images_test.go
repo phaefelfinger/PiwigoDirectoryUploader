@@ -412,6 +412,7 @@ func Test_uploadImages_saves_same_id_to_db(t *testing.T) {
 }
 
 // test metadata store to store save the metadat and simulate the database
+//TODO: refactor to use generated test implementation
 type testStore struct {
 	savedMetadata map[string]ImageMetaData
 }
@@ -434,6 +435,10 @@ func (s *testStore) SaveImageMetadata(m ImageMetaData) error {
 }
 
 func (d *testStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
+	return nil, errors.New("N/A")
+}
+
+func (d *testStore) ImageMetadataToDelete() ([]ImageMetaData, error) {
 	return nil, errors.New("N/A")
 }
 

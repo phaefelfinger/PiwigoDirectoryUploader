@@ -47,6 +47,21 @@ func (mr *MockImageMetadataProviderMockRecorder) ImageMetadata(arg0 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageMetadata", reflect.TypeOf((*MockImageMetadataProvider)(nil).ImageMetadata), arg0)
 }
 
+// ImageMetadataToDelete mocks base method
+func (m *MockImageMetadataProvider) ImageMetadataToDelete() ([]ImageMetaData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ImageMetadataToDelete")
+	ret0, _ := ret[0].([]ImageMetaData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ImageMetadataToDelete indicates an expected call of ImageMetadataToDelete
+func (mr *MockImageMetadataProviderMockRecorder) ImageMetadataToDelete() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageMetadataToDelete", reflect.TypeOf((*MockImageMetadataProvider)(nil).ImageMetadataToDelete))
+}
+
 // ImageMetadataToUpload mocks base method
 func (m *MockImageMetadataProvider) ImageMetadataToUpload() ([]ImageMetaData, error) {
 	m.ctrl.T.Helper()

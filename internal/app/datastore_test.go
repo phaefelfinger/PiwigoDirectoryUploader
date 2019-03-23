@@ -105,6 +105,37 @@ func Test_save_and_query_for_upload_records_do_not_contain_images_to_delete(t *t
 	EnsureMetadataAreEqual("toupload", img1, imgLoad, t)
 }
 
+func Test_save_and_query_for_deleted_records_do_contain_images(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
+
+	img1 := getExampleImageMetadata("blah/foo/bar.jpg")
+	img1.UploadRequired = false
+	img1.DeleteRequired = true
+
+	saveImageShouldNotFail("todelete", dataStore, img1, t)
+	img1.ImageId = 1
+
+	images, err := dataStore.ImageMetadataToDelete()
+	if err != nil {
+		t.Fatalf("Could not query images to delete! %s", err)
+	}
+
+	if len(images) > 1 {
+		t.Fatal("Got more than one image to delete but only one is expected")
+	}
+
+	if len(images) < 1 {
+		t.Fatal("Got no image to delete but one is expected!")
+	}
+
+	imgLoad := images[0]
+	EnsureMetadataAreEqual("todelete", img1, imgLoad, t)
+}
+
 func Test_load_metadata_not_found(t *testing.T) {
 	if !dbinitOk {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
