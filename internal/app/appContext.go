@@ -19,7 +19,6 @@ type appContext struct {
 	localRootPath string
 }
 
-
 func (c *appContext) UseMetadataStore(connectionString string) error {
 	if connectionString == "" {
 		return errors.New("missing connectionString to use metadata store!")

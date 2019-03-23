@@ -411,7 +411,6 @@ func Test_uploadImages_saves_same_id_to_db(t *testing.T) {
 	}
 }
 
-
 // test metadata store to store save the metadat and simulate the database
 type testStore struct {
 	savedMetadata map[string]ImageMetaData
