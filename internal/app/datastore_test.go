@@ -25,6 +25,7 @@ func TestSaveAndLoadMetadata(t *testing.T) {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
 	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
 
 	filePath := "blah/foo/bar.jpg"
 	img := getExampleImageMetadata(filePath)
@@ -41,8 +42,6 @@ func TestSaveAndLoadMetadata(t *testing.T) {
 
 	imgLoad = loadMetadataShouldNotFail("update", dataStore, filePath, t)
 	EnsureMetadataAreEqual("update", img, imgLoad, t)
-
-	cleanupDatabase(t)
 }
 
 func TestSaveAndQueryForUploadRecords(t *testing.T) {
@@ -50,9 +49,9 @@ func TestSaveAndQueryForUploadRecords(t *testing.T) {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
 	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
 
-	filePath := "blah/foo/bar.jpg"
-	img := getExampleImageMetadata(filePath)
+	img := getExampleImageMetadata("blah/foo/bar.jpg")
 
 	saveImageShouldNotFail("toupload", dataStore, img, t)
 	img.ImageId = 1
@@ -62,14 +61,48 @@ func TestSaveAndQueryForUploadRecords(t *testing.T) {
 		t.Fatalf("Could not query images to upload! %s", err)
 	}
 
-	if len(images) < 1 {
+	if len(images) != 1 {
 		t.Fatal("Did not get any saved images to upload!")
 	}
 
 	imgLoad := images[0]
 	EnsureMetadataAreEqual("toupload", img, imgLoad, t)
 
-	cleanupDatabase(t)
+}
+
+func Test_save_and_query_for_upload_records_do_not_contain_images_to_delete(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
+
+	img1 := getExampleImageMetadata("blah/foo/bar.jpg")
+
+	img2 := getExampleImageMetadata("blah/foo/bar2.jpg")
+	img2.DeleteRequired = true
+
+	saveImageShouldNotFail("toupload1", dataStore, img1, t)
+	img1.ImageId = 1
+
+	saveImageShouldNotFail("toupload2", dataStore, img2, t)
+	img2.ImageId = 2
+
+	images, err := dataStore.ImageMetadataToUpload()
+	if err != nil {
+		t.Fatalf("Could not query images to upload! %s", err)
+	}
+
+	if len(images) > 1 {
+		t.Fatal("Got more than one image to upload but only one is expected")
+	}
+
+	if len(images) != 1 {
+		t.Fatal("Did not get the saved images to upload!")
+	}
+
+	imgLoad := images[0]
+	EnsureMetadataAreEqual("toupload", img1, imgLoad, t)
 }
 
 func TestLoadMetadataNotFound(t *testing.T) {
@@ -77,6 +110,7 @@ func TestLoadMetadataNotFound(t *testing.T) {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
 	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
 
 	filePath := "blah/foo/bar.jpg"
 	imgLoad, err := dataStore.ImageMetadata(filePath)
@@ -86,8 +120,6 @@ func TestLoadMetadataNotFound(t *testing.T) {
 	if imgLoad.ImageId > 0 {
 		t.Error("Found an image metadata that should not exist on an emtpy database.")
 	}
-
-	cleanupDatabase(t)
 }
 
 func TestUniqueIndexOnRelativeFilePath(t *testing.T) {
@@ -95,6 +127,7 @@ func TestUniqueIndexOnRelativeFilePath(t *testing.T) {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
 	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
 
 	filePath := "blah/foo/bar.jpg"
 	img := getExampleImageMetadata(filePath)
@@ -111,8 +144,6 @@ func TestUniqueIndexOnRelativeFilePath(t *testing.T) {
 	if !strings.Contains(err.Error(), "fullImagePath") {
 		t.Errorf("Got a unexpected error on saving duplicate records: %s", err)
 	}
-
-	cleanupDatabase(t)
 }
 
 func TestUpdatePiwigoIdByChecksum(t *testing.T) {
@@ -120,6 +151,7 @@ func TestUpdatePiwigoIdByChecksum(t *testing.T) {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
 	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
 
 	filePath := "blah/foo/bar.jpg"
 	img := getExampleImageMetadata(filePath)
@@ -136,8 +168,6 @@ func TestUpdatePiwigoIdByChecksum(t *testing.T) {
 
 	imgLoad := loadMetadataShouldNotFail("update", dataStore, filePath, t)
 	EnsureMetadataAreEqual("SavePiwigoIdAndUpdateUploadFlag", img, imgLoad, t)
-
-	cleanupDatabase(t)
 }
 
 func TestUpdatePiwigoIdByChecksumFoundNoImage(t *testing.T) {
@@ -145,6 +175,7 @@ func TestUpdatePiwigoIdByChecksumFoundNoImage(t *testing.T) {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
 	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
 
 	filePath := "blah/foo/bar.jpg"
 	img := getExampleImageMetadata(filePath)
@@ -162,7 +193,6 @@ func TestUpdatePiwigoIdByChecksumFoundNoImage(t *testing.T) {
 	imgLoad := loadMetadataShouldNotFail("update", dataStore, filePath, t)
 	EnsureMetadataAreEqual("SavePiwigoIdAndUpdateUploadFlag", img, imgLoad, t)
 
-	cleanupDatabase(t)
 }
 
 func saveImageShouldNotFail(action string, dataStore *localDataStore, img ImageMetaData, t *testing.T) {
