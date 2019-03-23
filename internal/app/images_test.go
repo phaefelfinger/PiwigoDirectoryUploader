@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 Philipp Haefelfinger (http://www.haefelfinger.ch/). All Rights Reserved.
+ * This application is licensed under GPLv2. See the LICENSE file in the root directory of the project.
+ */
+
 package app
 
 //go:generate mockgen -destination=./piwigo_mock_test.go -package=app git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoApi,PiwigoCategoryApi,PiwigoImageApi
