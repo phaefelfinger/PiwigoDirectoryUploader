@@ -24,6 +24,16 @@ func synchronizeLocalImageMetadata(metadataStorage ImageMetadataProvider, fileSy
 	logrus.Debugf("Starting synchronizeLocalImageMetadata")
 	logrus.Info("Synchronizing local image metadata database with local available images")
 
+	err := synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes, metadataStorage, categories, checksumCalculator)
+	if err != nil {
+		return err
+	}
+
+	logrus.Debugf("Finished synchronizeLocalImageMetadata")
+	return nil
+}
+
+func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*localFileStructure.FilesystemNode, metadataStorage ImageMetadataProvider, categories map[string]*piwigo.PiwigoCategory, checksumCalculator fileChecksumCalculator) error {
 	for _, file := range fileSystemNodes {
 		if file.IsDir {
 			// we are only interested in files not directories
@@ -68,8 +78,6 @@ func synchronizeLocalImageMetadata(metadataStorage ImageMetadataProvider, fileSy
 			return err
 		}
 	}
-
-	logrus.Debugf("Finished synchronizeLocalImageMetadata")
 	return nil
 }
 
