@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func Test_synchronize_local_image_metadata_should_fo_nothing_if_empty(t *testing.T) {
+func Test_synchronize_local_image_metadata_should_find_nothing_if_empty(t *testing.T) {
 	categories := make(map[string]*piwigo.PiwigoCategory)
 	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
 
@@ -406,6 +406,34 @@ func Test_uploadImages_saves_same_id_to_db(t *testing.T) {
 	piwigomock.EXPECT().UploadImage(5, "/nonexisting/file.jpg", "1234", 2).Times(1).Return(5, nil)
 
 	err := uploadImages(piwigomock, dbmock)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_synchronizeLocalImageMetadataFindFilesToDelete(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	img := ImageMetaData{
+		ImageId:        1,
+		PiwigoId:       5,
+		FullImagePath:  "/nonexisting/file.jpg",
+		UploadRequired: true,
+		Md5Sum:         "1234",
+		CategoryId:     2,
+	}
+	images := []ImageMetaData{img}
+
+	imgToSave := img
+	imgToSave.UploadRequired = false
+	imgToSave.DeleteRequired = true
+
+	dbmock := NewMockImageMetadataProvider(mockCtrl)
+	dbmock.EXPECT().ImageMetadataAll().Times(1).Return(images, nil)
+	dbmock.EXPECT().SaveImageMetadata(imgToSave).Times(1)
+
+	err := synchronizeLocalImageMetadataFindFilesToDelete(dbmock)
 	if err != nil {
 		t.Error(err)
 	}
