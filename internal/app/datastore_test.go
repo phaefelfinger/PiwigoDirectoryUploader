@@ -20,7 +20,7 @@ func TestDataStoreInitialize(t *testing.T) {
 	cleanupDatabase(t)
 }
 
-func TestSaveAndLoadMetadata(t *testing.T) {
+func Test_save_and_load_metadata(t *testing.T) {
 	if !dbinitOk {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
@@ -44,7 +44,7 @@ func TestSaveAndLoadMetadata(t *testing.T) {
 	EnsureMetadataAreEqual("update", img, imgLoad, t)
 }
 
-func TestSaveAndQueryForUploadRecords(t *testing.T) {
+func Test_save_and_query_for_upload_records(t *testing.T) {
 	if !dbinitOk {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
@@ -105,7 +105,7 @@ func Test_save_and_query_for_upload_records_do_not_contain_images_to_delete(t *t
 	EnsureMetadataAreEqual("toupload", img1, imgLoad, t)
 }
 
-func TestLoadMetadataNotFound(t *testing.T) {
+func Test_load_metadata_not_found(t *testing.T) {
 	if !dbinitOk {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
@@ -122,15 +122,14 @@ func TestLoadMetadataNotFound(t *testing.T) {
 	}
 }
 
-func TestUniqueIndexOnRelativeFilePath(t *testing.T) {
+func Test_unique_index_on_relativeFilePath(t *testing.T) {
 	if !dbinitOk {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
 	dataStore := setupDatabase(t)
 	defer cleanupDatabase(t)
 
-	filePath := "blah/foo/bar.jpg"
-	img := getExampleImageMetadata(filePath)
+	img := getExampleImageMetadata("blah/foo/bar.jpg")
 
 	saveImageShouldNotFail("insert", dataStore, img, t)
 
@@ -146,7 +145,7 @@ func TestUniqueIndexOnRelativeFilePath(t *testing.T) {
 	}
 }
 
-func TestUpdatePiwigoIdByChecksum(t *testing.T) {
+func Test_update_piwigoId_by_checksum(t *testing.T) {
 	if !dbinitOk {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
@@ -170,7 +169,7 @@ func TestUpdatePiwigoIdByChecksum(t *testing.T) {
 	EnsureMetadataAreEqual("SavePiwigoIdAndUpdateUploadFlag", img, imgLoad, t)
 }
 
-func TestUpdatePiwigoIdByChecksumFoundNoImage(t *testing.T) {
+func Test_update_piwigoId_by_checksum_found_no_image(t *testing.T) {
 	if !dbinitOk {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
 	}
