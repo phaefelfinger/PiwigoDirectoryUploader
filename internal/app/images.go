@@ -69,7 +69,7 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 			return err
 		}
 
-		metadata.UploadRequired = !metadata.LastChange.Equal(file.ModTime)
+		metadata.UploadRequired = !metadata.LastChange.Equal(file.ModTime) || metadata.PiwigoId == 0
 		metadata.DeleteRequired = false
 		metadata.LastChange = file.ModTime
 		metadata.Md5Sum, err = checksumCalculator(file.Path)

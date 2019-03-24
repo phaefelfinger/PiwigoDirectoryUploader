@@ -78,6 +78,54 @@ func Test_synchronize_local_image_metadata_should_add_new_metadata(t *testing.T)
 	}
 }
 
+func Test_synchronize_local_image_metadata_should_mark_unchanged_entries_without_piwigoid_as_uploads_and_reset_deleted(t *testing.T) {
+
+	categories := make(map[string]*piwigo.PiwigoCategory)
+	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+
+	db := NewtestStore()
+	db.savedMetadata["2019/shooting1/abc.jpg"] = ImageMetaData{
+		Md5Sum:         "2019/shooting1/abc.jpg",
+		FullImagePath:  "2019/shooting1/abc.jpg",
+		PiwigoId:       0,
+		UploadRequired: false,
+		LastChange:     time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC),
+		Filename:       "abc.jpg",
+		DeleteRequired: true,
+	}
+
+	testFileSystemNode := &localFileStructure.FilesystemNode{
+		Key:     "2019/shooting1/abc.jpg",
+		ModTime: time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC),
+		Name:    "abc.jpg",
+		Path:    "2019/shooting1/abc.jpg",
+		IsDir:   false}
+
+	fileSystemNodes := map[string]*localFileStructure.FilesystemNode{}
+	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
+
+	// execute the sync metadata based on the file system results
+	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// check if data are saved
+	savedData, exist := db.savedMetadata[testFileSystemNode.Key]
+	if !exist {
+		t.Fatal("Could not find correct metadata!")
+	}
+	if savedData.LastChange != testFileSystemNode.ModTime {
+		t.Error("lastChange on db image metadata is not set to the right date!")
+	}
+	if savedData.UploadRequired != true {
+		t.Errorf("uploadRequired on db image metadata is not set to true!")
+	}
+	if savedData.DeleteRequired != false {
+		t.Errorf("deleteRequired on db image metadata is not set to false!")
+	}
+}
+
 func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_uploads_and_reset_deleted(t *testing.T) {
 
 	categories := make(map[string]*piwigo.PiwigoCategory)
@@ -134,6 +182,7 @@ func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_up
 	db.savedMetadata["2019/shooting1/abc.jpg"] = ImageMetaData{
 		Md5Sum:         "2019/shooting1/abc.jpg",
 		FullImagePath:  "2019/shooting1/abc.jpg",
+		PiwigoId:       5,
 		UploadRequired: false,
 		LastChange:     time.Date(2019, 01, 01, 01, 0, 0, 0, time.UTC),
 		Filename:       "abc.jpg",
