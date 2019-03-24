@@ -32,6 +32,20 @@ func (m *MockImageMetadataProvider) EXPECT() *MockImageMetadataProviderMockRecor
 	return m.recorder
 }
 
+// DeleteMarkedImages mocks base method
+func (m *MockImageMetadataProvider) DeleteMarkedImages() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMarkedImages")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMarkedImages indicates an expected call of DeleteMarkedImages
+func (mr *MockImageMetadataProviderMockRecorder) DeleteMarkedImages() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMarkedImages", reflect.TypeOf((*MockImageMetadataProvider)(nil).DeleteMarkedImages))
+}
+
 // ImageMetadata mocks base method
 func (m *MockImageMetadataProvider) ImageMetadata(arg0 string) (ImageMetaData, error) {
 	m.ctrl.T.Helper()

@@ -42,6 +42,7 @@ type ImageMetadataProvider interface {
 	ImageMetadataAll() ([]ImageMetaData, error)
 	SaveImageMetadata(m ImageMetaData) error
 	SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int) error
+	DeleteMarkedImages() error
 }
 
 type localDataStore struct {
@@ -220,7 +221,7 @@ func (d *localDataStore) SaveImageMetadata(img ImageMetaData) error {
 		return err
 	}
 
-	logrus.Tracef("Commiting metadata for image %s", img.String())
+	logrus.Tracef("Committing metadata for image %s", img.String())
 	return tx.Commit()
 }
 
@@ -261,7 +262,34 @@ func (d *localDataStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId
 		return err
 	}
 
-	logrus.Tracef("Commiting piwigo id %d for file with md5sum %s", piwigoId, md5Sum)
+	logrus.Tracef("Committing piwigo id %d for file with md5sum %s", piwigoId, md5Sum)
+	return tx.Commit()
+}
+
+func (d *localDataStore) DeleteMarkedImages() error {
+	logrus.Trace("Deleting marked records from database...")
+	db, err := d.openDatabase()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("DELETE FROM image WHERE deleteRequired = 1")
+	if err != nil {
+		logrus.Errorf("Rolling back transaction of deleting marked images")
+		errTx := tx.Rollback()
+		if errTx != nil {
+			logrus.Errorf("Rollback of transaction for piwigo delete failed!")
+		}
+		return err
+	}
+
+	logrus.Tracef("Committing deleted images from database")
 	return tx.Commit()
 }
 

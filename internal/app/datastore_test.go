@@ -253,7 +253,39 @@ func Test_update_piwigoId_by_checksum_found_no_image(t *testing.T) {
 
 	imgLoad := loadMetadataShouldNotFail("update", dataStore, filePath, t)
 	EnsureMetadataAreEqual("SavePiwigoIdAndUpdateUploadFlag", img, imgLoad, t)
+}
 
+func Test_deleteMarkedImages_should_remove_records(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
+
+	img1 := getExampleImageMetadata("blah/foo/bar.jpg")
+
+	img2 := getExampleImageMetadata("blah/foo/bar2.jpg")
+	img2.DeleteRequired = true
+
+	saveImageShouldNotFail("allimages", dataStore, img1, t)
+	img1.ImageId = 1
+
+	saveImageShouldNotFail("allimages", dataStore, img2, t)
+	img2.ImageId = 2
+
+	err := dataStore.DeleteMarkedImages()
+	if err != nil {
+		t.Fatalf("Could not delete marked records! %s", err)
+	}
+
+	images, err := dataStore.ImageMetadataAll()
+	if err != nil {
+		t.Fatalf("Could not query images to upload! %s", err)
+	}
+
+	if len(images) != 1 {
+		t.Fatalf("Got incorrect number of images (%d). Expected one.", len(images))
+	}
 }
 
 func saveImageShouldNotFail(action string, dataStore *localDataStore, img ImageMetaData, t *testing.T) {
