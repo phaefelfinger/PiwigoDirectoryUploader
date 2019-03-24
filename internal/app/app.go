@@ -19,6 +19,7 @@ var (
 	piwigoUrl      = flag.String("piwigoUrl", "", "The root url without tailing slash to your piwigo installation.")
 	piwigoUser     = flag.String("piwigoUser", "", "The username to use during sync.")
 	piwigoPassword = flag.String("piwigoPassword", "", "This is password to the given username.")
+	removeImages   = flag.Bool("removeImages", false, "If set to true, images scheduled to delete will be removed from the piwigo server. Be sure you want to delete images before enabling this flag.")
 )
 
 func Run() {
@@ -57,15 +58,22 @@ func Run() {
 		logErrorAndExit(err, 7)
 	}
 
-	if *noUpload {
+	if !(*noUpload) {
+		err = uploadImages(context.piwigo, context.dataStore)
+		if err != nil {
+			logErrorAndExit(err, 8)
+		}
+	} else {
 		logrus.Warnln("Skipping upload of images as flag noUpload is set to true!")
-		_ = context.piwigo.Logout()
-		os.Exit(90)
 	}
 
-	err = uploadImages(context.piwigo, context.dataStore)
-	if err != nil {
-		logErrorAndExit(err, 8)
+	if *removeImages {
+		err = deleteImages(context.piwigo, context.dataStore)
+		if err != nil {
+			logErrorAndExit(err, 9)
+		}
+	} else {
+		logrus.Info("The flag removeImages is disabled. Skipping...")
 	}
 
 	_ = context.piwigo.Logout()
