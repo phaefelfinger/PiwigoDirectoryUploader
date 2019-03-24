@@ -151,6 +151,20 @@ func (m *MockPiwigoImageApi) EXPECT() *MockPiwigoImageApiMockRecorder {
 	return m.recorder
 }
 
+// DeleteImages mocks base method
+func (m *MockPiwigoImageApi) DeleteImages(arg0 []int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteImages", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteImages indicates an expected call of DeleteImages
+func (mr *MockPiwigoImageApiMockRecorder) DeleteImages(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImages", reflect.TypeOf((*MockPiwigoImageApi)(nil).DeleteImages), arg0)
+}
+
 // ImageCheckFile mocks base method
 func (m *MockPiwigoImageApi) ImageCheckFile(arg0 int, arg1 string) (int, error) {
 	m.ctrl.T.Helper()

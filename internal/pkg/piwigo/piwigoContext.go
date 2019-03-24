@@ -33,6 +33,7 @@ type PiwigoImageApi interface {
 	ImageCheckFile(piwigoId int, md5sum string) (int, error)
 	ImagesExistOnPiwigo(md5sums []string) (map[string]int, error)
 	UploadImage(piwigoId int, filePath string, md5sum string, category int) (int, error)
+	DeleteImages(imageIds []int) error
 }
 
 type PiwigoContext struct {
@@ -186,7 +187,7 @@ func (context *PiwigoContext) ImageCheckFile(piwigoId int, md5sum string) (int, 
 
 func (context *PiwigoContext) ImagesExistOnPiwigo(md5sums []string) (map[string]int, error) {
 	//TODO: make sure to split to multiple queries -> to honor max upload queries
-	md5sumList := strings.Join(md5sums, ",")
+	md5sumList := strings.Join(md5sums, "|")
 
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.exist")
@@ -244,6 +245,48 @@ func (context *PiwigoContext) UploadImage(piwigoId int, filePath string, md5sum 
 	}
 
 	return imageId, nil
+}
+
+func (context *PiwigoContext) DeleteImages(imageIds []int) error {
+	logrus.Debug("Entering DeleteImages")
+	defer logrus.Debug("Leaving DeleteImages")
+
+	pwgToken, err := context.getPiwigoToken()
+	if err != nil {
+		return err
+	}
+
+	parts := make([]string, len(imageIds))
+	for id := range imageIds {
+		parts = append(parts, strconv.Itoa(id))
+	}
+	joinedIds := strings.Join(parts, "|")
+
+	logrus.Infof("Deleting images: %s", joinedIds)
+
+	formData := url.Values{}
+	formData.Set("method", "pwg.images.delete")
+	formData.Set("image_id", joinedIds)
+	formData.Set("pwg_token", pwgToken)
+
+	var deleteResponse deleteResponse
+	return context.executePiwigoRequest(formData, &deleteResponse)
+}
+
+func (context *PiwigoContext) getPiwigoToken() (string, error) {
+	logrus.Debug("Entering getPiwigoToken")
+	defer logrus.Debug("Leaving getPiwigoToken")
+
+	status, err := context.getStatus()
+	if err != nil {
+		logrus.Error("Could not get piwigo status.")
+		return "", err
+	}
+	pwgToken := status.Result.PwgToken
+	if pwgToken == "" {
+		return "", errors.New("Did not get a valid piwigo token. Could not delete the images.")
+	}
+	return pwgToken, nil
 }
 
 func (context *PiwigoContext) initializeCookieJarIfRequired() {

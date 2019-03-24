@@ -130,3 +130,12 @@ type checkFilesResponse struct {
 func (r checkFilesResponse) responseStatus() string {
 	return r.Status
 }
+
+type deleteResponse struct {
+	Status string `json:"stat"`
+	Result int    `json:"result"`
+}
+
+func (r deleteResponse) responseStatus() string {
+	return r.Status
+}
