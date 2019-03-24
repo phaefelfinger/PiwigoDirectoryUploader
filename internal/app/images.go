@@ -69,13 +69,9 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 			return err
 		}
 
-		if metadata.LastChange.Equal(file.ModTime) {
-			logrus.Infof("No changed detected on file %s -> keeping current state", file.Key)
-			continue
-		}
-
+		metadata.UploadRequired = !metadata.LastChange.Equal(file.ModTime)
+		metadata.DeleteRequired = false
 		metadata.LastChange = file.ModTime
-		metadata.UploadRequired = true
 		metadata.Md5Sum, err = checksumCalculator(file.Path)
 		if err != nil {
 			logrus.Warnf("Could not calculate checksum for file %s. Skipping...", file.Path)
@@ -149,6 +145,42 @@ func uploadImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider ImageMetadat
 	}
 
 	return nil
+}
+
+func deleteImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider ImageMetadataProvider) error {
+	logrus.Debug("Starting deleteImages")
+	defer logrus.Debug("Finished deleteImages successfully")
+
+	images, err := metadataProvider.ImageMetadataToDelete()
+	if err != nil {
+		return err
+	}
+
+	if len(images) == 0 {
+		logrus.Info("There are not images scheduled for deletion.")
+		return nil
+	}
+
+	logrus.Infof("Deleting %d images from piwigo", len(images))
+
+	piwigoIds := []int{}
+	for _, img := range images {
+		if img.PiwigoId > 0 {
+			logrus.Tracef("Adding %d to deletable list", img.PiwigoId)
+			piwigoIds = append(piwigoIds, img.PiwigoId)
+		}
+	}
+
+	if len(piwigoIds) > 0 {
+		err = piwigoCtx.DeleteImages(piwigoIds)
+		if err != nil {
+			return err
+		}
+	} else {
+		logrus.Info("Only local images found to delete. No call to piwigo is made.")
+	}
+
+	return metadataProvider.DeleteMarkedImages()
 }
 
 // This method aggregates the check for files with missing piwigoids and if changed files need to be uploaded again.

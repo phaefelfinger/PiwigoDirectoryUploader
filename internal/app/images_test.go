@@ -78,7 +78,7 @@ func Test_synchronize_local_image_metadata_should_add_new_metadata(t *testing.T)
 	}
 }
 
-func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_uploads(t *testing.T) {
+func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_uploads_and_reset_deleted(t *testing.T) {
 
 	categories := make(map[string]*piwigo.PiwigoCategory)
 	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
@@ -90,6 +90,7 @@ func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_upload
 		UploadRequired: false,
 		LastChange:     time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC),
 		Filename:       "abc.jpg",
+		DeleteRequired: true,
 	}
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
@@ -119,9 +120,12 @@ func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_upload
 	if savedData.UploadRequired != true {
 		t.Errorf("uploadRequired on db image metadata is not set to true!")
 	}
+	if savedData.DeleteRequired != false {
+		t.Errorf("deleteRequired on db image metadata is not set to false!")
+	}
 }
 
-func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_upload(t *testing.T) {
+func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_upload_and_reset_deleted(t *testing.T) {
 	db := NewtestStore()
 
 	categories := make(map[string]*piwigo.PiwigoCategory)
@@ -133,6 +137,7 @@ func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_up
 		UploadRequired: false,
 		LastChange:     time.Date(2019, 01, 01, 01, 0, 0, 0, time.UTC),
 		Filename:       "abc.jpg",
+		DeleteRequired: true,
 	}
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
@@ -158,6 +163,9 @@ func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_up
 	}
 	if savedData.UploadRequired {
 		t.Errorf("uploadRequired on db image metadata is set to true, but should not be on unchanged items!")
+	}
+	if savedData.DeleteRequired != false {
+		t.Errorf("deleteRequired on db image metadata is not set to false!")
 	}
 }
 
@@ -354,14 +362,7 @@ func Test_uploadImages_saves_new_id_to_db(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	img := ImageMetaData{
-		ImageId:        1,
-		PiwigoId:       0,
-		FullImagePath:  "/nonexisting/file.jpg",
-		UploadRequired: true,
-		Md5Sum:         "1234",
-		CategoryId:     2,
-	}
+	img := createTestImageMetaData(0)
 	images := []ImageMetaData{img}
 
 	imgToSave := img
@@ -385,14 +386,7 @@ func Test_uploadImages_saves_same_id_to_db(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	img := ImageMetaData{
-		ImageId:        1,
-		PiwigoId:       5,
-		FullImagePath:  "/nonexisting/file.jpg",
-		UploadRequired: true,
-		Md5Sum:         "1234",
-		CategoryId:     2,
-	}
+	img := createTestImageMetaData(5)
 	images := []ImageMetaData{img}
 
 	imgToSave := img
@@ -415,14 +409,7 @@ func Test_synchronizeLocalImageMetadataFindFilesToDelete(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	img := ImageMetaData{
-		ImageId:        1,
-		PiwigoId:       5,
-		FullImagePath:  "/nonexisting/file.jpg",
-		UploadRequired: true,
-		Md5Sum:         "1234",
-		CategoryId:     2,
-	}
+	img := createTestImageMetaData(5)
 	images := []ImageMetaData{img}
 
 	imgToSave := img
@@ -434,6 +421,69 @@ func Test_synchronizeLocalImageMetadataFindFilesToDelete(t *testing.T) {
 	dbmock.EXPECT().SaveImageMetadata(imgToSave).Times(1)
 
 	err := synchronizeLocalImageMetadataFindFilesToDelete(dbmock)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_deleteImages_should_call_piwigo_and_remove_metadata(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	img := createTestImageMetaData(5)
+	img.UploadRequired = false
+	img.DeleteRequired = true
+	images := []ImageMetaData{img}
+
+	dbmock := NewMockImageMetadataProvider(mockCtrl)
+	dbmock.EXPECT().ImageMetadataToDelete().Times(1).Return(images, nil)
+	dbmock.EXPECT().DeleteMarkedImages().Times(1).Return(nil)
+
+	piwigomock := NewMockPiwigoImageApi(mockCtrl)
+	piwigomock.EXPECT().DeleteImages([]int{5}).Times(1).Return(nil)
+
+	err := deleteImages(piwigomock, dbmock)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_deleteImages_should_not_call_piwigo_for_not_uploaded_images_and_remove_metadata(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	img := createTestImageMetaData(0)
+	img.UploadRequired = false
+	img.DeleteRequired = true
+	images := []ImageMetaData{img}
+
+	dbmock := NewMockImageMetadataProvider(mockCtrl)
+	dbmock.EXPECT().ImageMetadataToDelete().Times(1).Return(images, nil)
+	dbmock.EXPECT().DeleteMarkedImages().Times(1).Return(nil)
+
+	piwigomock := NewMockPiwigoImageApi(mockCtrl)
+	piwigomock.EXPECT().DeleteImages(gomock.Any()).Times(0)
+
+	err := deleteImages(piwigomock, dbmock)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_deleteImages_should_not_call_anything_if_no_images_are_marked_for_deletion(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	images := []ImageMetaData{}
+
+	dbmock := NewMockImageMetadataProvider(mockCtrl)
+	dbmock.EXPECT().ImageMetadataToDelete().Times(1).Return(images, nil)
+	dbmock.EXPECT().DeleteMarkedImages().Times(0)
+
+	piwigomock := NewMockPiwigoImageApi(mockCtrl)
+	piwigomock.EXPECT().DeleteImages(gomock.Any()).Times(0)
+
+	err := deleteImages(piwigomock, dbmock)
 	if err != nil {
 		t.Error(err)
 	}
@@ -478,7 +528,23 @@ func (d *testStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int)
 	return errors.New("N/A")
 }
 
+func (d *testStore) DeleteMarkedImages() error {
+	return errors.New("N/A")
+}
+
 // to make the sync testable, we pass in a simple mock that returns the filepath as checksum
 func testChecksumCalculator(file string) (string, error) {
 	return file, nil
+}
+
+func createTestImageMetaData(piwigoId int) ImageMetaData {
+	img := ImageMetaData{
+		ImageId:        1,
+		PiwigoId:       piwigoId,
+		FullImagePath:  "/nonexisting/file.jpg",
+		UploadRequired: true,
+		Md5Sum:         "1234",
+		CategoryId:     2,
+	}
+	return img
 }
