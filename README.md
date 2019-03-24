@@ -13,6 +13,7 @@ Currently the following features are supported
 - Upload updated images that changed locally
 - Local metadata storage using sqlite to make change detection easier
 - Rebuild the local metadata database without uploading any pictures. Though, The categories get created!
+- Remove images no longer present (configurable)
 
 There are some features planned but not ready yet:
 
@@ -20,8 +21,7 @@ There are some features planned but not ready yet:
 - Upload more than one file at a time
 - Fully support files within multiple albums
 - Specify more than one root path to gather images on the local system
-- Remove images no longer present (configurable)
-
+- Storing categories in the local database
 
 ## Build and run the application
 
@@ -108,6 +108,8 @@ Usage of ./PiwigoDirectoryUploader:
         The root url without tailing slash to your piwigo installation.
   -piwigoUser string
         The username to use during sync.
+  -removeImages
+        If set to true, images scheduled to delete will be removed from the piwigo server. Be sure you want to delete images before enabling this flag.
   -sqliteDb string
         The connection string to the sql lite database file. (default "./localstate.db")
 ```
