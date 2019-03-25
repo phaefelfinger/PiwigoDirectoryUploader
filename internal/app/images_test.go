@@ -407,6 +407,33 @@ func Test_updatePiwigoIdIfAlreadyUploaded_with_image_to_check(t *testing.T) {
 	}
 }
 
+func Test_updatePiwigoIdIfAlreadyUploaded_with_image_to_check_missing_on_server(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	img := ImageMetaData{
+		ImageId:        1,
+		PiwigoId:       0,
+		UploadRequired: true,
+		Md5Sum:         "1234",
+	}
+	images := []ImageMetaData{img}
+
+	dbmock := NewMockImageMetadataProvider(mockCtrl)
+	dbmock.EXPECT().ImageMetadataToUpload().Return(images, nil)
+	dbmock.EXPECT().SavePiwigoIdAndUpdateUploadFlag("1234", 1).Times(0)
+
+	piwigoResponose := make(map[string]int)
+
+	piwigomock := NewMockPiwigoImageApi(mockCtrl)
+	piwigomock.EXPECT().ImagesExistOnPiwigo(gomock.Any()).Times(1).Return(piwigoResponose, nil)
+
+	err := updatePiwigoIdIfAlreadyUploaded(dbmock, piwigomock)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func Test_uploadImages_saves_new_id_to_db(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
