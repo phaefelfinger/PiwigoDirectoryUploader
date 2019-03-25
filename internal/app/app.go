@@ -58,22 +58,22 @@ func Run() {
 		logErrorAndExit(err, 7)
 	}
 
-	if !(*noUpload) {
-		err = uploadImages(context.piwigo, context.dataStore)
+	if *removeImages {
+		err = deleteImages(context.piwigo, context.dataStore)
 		if err != nil {
 			logErrorAndExit(err, 8)
 		}
 	} else {
-		logrus.Warnln("Skipping upload of images as flag noUpload is set to true!")
+		logrus.Info("The flag removeImages is disabled. Skipping...")
 	}
 
-	if *removeImages {
-		err = deleteImages(context.piwigo, context.dataStore)
+	if !(*noUpload) {
+		err = uploadImages(context.piwigo, context.dataStore)
 		if err != nil {
 			logErrorAndExit(err, 9)
 		}
 	} else {
-		logrus.Info("The flag removeImages is disabled. Skipping...")
+		logrus.Warnln("Skipping upload of images as flag noUpload is set to true!")
 	}
 
 	_ = context.piwigo.Logout()
