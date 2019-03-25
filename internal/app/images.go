@@ -51,7 +51,7 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 
 		metadata, err := metadataStorage.ImageMetadata(file.Path)
 		if err == ErrorRecordNotFound {
-			logrus.Debugf("No metadata for %s found. Creating new entry.", file.Key)
+			logrus.Debugf("Creating new metadata entry for %s.", file.Path)
 			metadata = ImageMetaData{}
 			metadata.Filename = file.Name
 			metadata.FullImagePath = file.Path
@@ -67,6 +67,11 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 		} else if err != nil {
 			logrus.Errorf("Could not get metadata due to trouble. Cancelling - %s", err)
 			return err
+		}
+
+		if fileDidNotChange(&metadata, file) {
+			logrus.Debugf("No changes found for file %s", file.Path)
+			continue
 		}
 
 		metadata.UploadRequired = !metadata.LastChange.Equal(file.ModTime) || metadata.PiwigoId == 0
@@ -163,7 +168,7 @@ func deleteImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider ImageMetadat
 
 	logrus.Infof("Deleting %d images from piwigo", len(images))
 
-	piwigoIds := []int{}
+	var piwigoIds []int = nil
 	for _, img := range images {
 		if img.PiwigoId > 0 {
 			logrus.Tracef("Adding %d to deletable list", img.PiwigoId)
@@ -273,6 +278,7 @@ func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx p
 	if err != nil {
 		return err
 	}
+
 	for md5sum, piwigoId := range missingResults {
 		if piwigoId > 0 {
 			logrus.Debugf("Setting piwigo id of %s to %d", md5sum, piwigoId)
@@ -286,4 +292,8 @@ func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx p
 	}
 
 	return nil
+}
+
+func fileDidNotChange(metadata *ImageMetaData, file *localFileStructure.FilesystemNode) bool {
+	return metadata.LastChange.Equal(file.ModTime) && !metadata.DeleteRequired
 }
