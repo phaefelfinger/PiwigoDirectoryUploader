@@ -274,8 +274,8 @@ func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx p
 		return err
 	}
 	for md5sum, piwigoId := range missingResults {
-		logrus.Debugf("Setting piwigo id of %s to %d", md5sum, piwigoId)
 		if piwigoId > 0 {
+			logrus.Debugf("Setting piwigo id of %s to %d", md5sum, piwigoId)
 			err = provider.SavePiwigoIdAndUpdateUploadFlag(md5sum, piwigoId)
 			if err != nil {
 				logrus.Warnf("Could not save piwigo id %d for file %s", piwigoId, md5sum)
