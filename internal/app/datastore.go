@@ -168,7 +168,7 @@ func (d *localDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired, deleteRequired FROM image WHERE uploadRequired = 1 and deleteRequired = 0")
+	rows, err := db.Query("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired, deleteRequired FROM image WHERE uploadRequired = 1 and deleteRequired = 0 order by fullImagePath asc")
 	if err != nil {
 		return nil, err
 	}
