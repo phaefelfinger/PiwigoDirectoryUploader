@@ -5,8 +5,8 @@
 
 package images
 
-//go:generate mockgen -destination=./piwigo_mock_test.go -package=app git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoApi,PiwigoCategoryApi,PiwigoImageApi
-//go:generate mockgen -destination=./datastore_mock_test.go -package=app git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore ImageMetadataProvider
+//go:generate mockgen -destination=./piwigo_mock_test.go -package=images git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoApi,PiwigoCategoryApi,PiwigoImageApi
+//go:generate mockgen -destination=./datastore_mock_test.go -package=images git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore ImageMetadataProvider
 
 import (
 	"errors"
