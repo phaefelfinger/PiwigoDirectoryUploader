@@ -16,6 +16,18 @@ import (
 
 var ErrorRecordNotFound = errors.New("Record not found")
 
+type CategoryData struct {
+	CategoryId     int
+	PiwigoId       int
+	PiwigoParentId int
+	Name           string
+	Key            string
+}
+
+func (cat *CategoryData) String() string {
+	return fmt.Sprintf("CategoryData{CategoryId:%d, PiwigoId:%d, PiwigoParentId:%d, Name:%s, Key:%s}", cat.CategoryId, cat.PiwigoId, cat.PiwigoParentId, cat.Name, cat.Key)
+}
+
 type ImageMetaData struct {
 	ImageId        int
 	PiwigoId       int
@@ -31,6 +43,12 @@ type ImageMetaData struct {
 
 func (img *ImageMetaData) String() string {
 	return fmt.Sprintf("ImageMetaData{ImageId:%d, PiwigoId:%d, CategoryId:%d, RelPath:%s, File:%s, Md5:%s, Change:%sS, catpath:%s, UploadRequired: %t, DeleteRequired: %t}", img.ImageId, img.PiwigoId, img.CategoryId, img.FullImagePath, img.Filename, img.Md5Sum, img.LastChange.String(), img.CategoryPath, img.UploadRequired, img.DeleteRequired)
+}
+
+type CategoryProvider interface {
+	SaveCategory(category CategoryData) error
+	GetCategoryByPiwigoId(id int) (CategoryData, error)
+	GetCategoryByKey(key string) (CategoryData, error)
 }
 
 type ImageMetadataProvider interface {
