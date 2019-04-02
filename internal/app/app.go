@@ -7,6 +7,7 @@ package app
 
 import (
 	"flag"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/images"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -48,18 +49,18 @@ func Run() {
 		logErrorAndExit(err, 5)
 	}
 
-	err = synchronizeLocalImageMetadata(context.dataStore, filesystemNodes, categories, localFileStructure.CalculateFileCheckSums)
+	err = images.SynchronizeLocalImageMetadata(context.dataStore, filesystemNodes, categories, localFileStructure.CalculateFileCheckSums)
 	if err != nil {
 		logErrorAndExit(err, 6)
 	}
 
-	err = synchronizePiwigoMetadata(context.piwigo, context.dataStore)
+	err = images.SynchronizePiwigoMetadata(context.piwigo, context.dataStore)
 	if err != nil {
 		logErrorAndExit(err, 7)
 	}
 
 	if *removeImages {
-		err = deleteImages(context.piwigo, context.dataStore)
+		err = images.DeleteImages(context.piwigo, context.dataStore)
 		if err != nil {
 			logErrorAndExit(err, 8)
 		}
@@ -68,7 +69,7 @@ func Run() {
 	}
 
 	if !(*noUpload) {
-		err = uploadImages(context.piwigo, context.dataStore)
+		err = images.UploadImages(context.piwigo, context.dataStore)
 		if err != nil {
 			logErrorAndExit(err, 9)
 		}

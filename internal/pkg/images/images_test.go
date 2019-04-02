@@ -3,7 +3,7 @@
  * This application is licensed under GPLv2. See the LICENSE file in the root directory of the project.
  */
 
-package app
+package images
 
 //go:generate mockgen -destination=./piwigo_mock_test.go -package=app git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoApi,PiwigoCategoryApi,PiwigoImageApi
 //go:generate mockgen -destination=./datastore_mock_test.go -package=app git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore ImageMetadataProvider
@@ -25,7 +25,7 @@ func Test_synchronize_local_image_metadata_should_find_nothing_if_empty(t *testi
 	db := NewtestStore()
 	fileSystemNodes := map[string]*localFileStructure.FilesystemNode{}
 
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -53,7 +53,7 @@ func Test_synchronize_local_image_metadata_should_add_new_metadata(t *testing.T)
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -107,7 +107,7 @@ func Test_synchronize_local_image_metadata_should_mark_unchanged_entries_without
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -154,7 +154,7 @@ func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_upload
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -202,7 +202,7 @@ func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_up
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -237,7 +237,7 @@ func Test_synchronize_local_image_metadata_should_not_process_directories(t *tes
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := synchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -454,7 +454,7 @@ func Test_uploadImages_saves_new_id_to_db(t *testing.T) {
 	piwigomock := NewMockPiwigoImageApi(mockCtrl)
 	piwigomock.EXPECT().UploadImage(0, "/nonexisting/file.jpg", "1234", 2).Times(1).Return(5, nil)
 
-	err := uploadImages(piwigomock, dbmock)
+	err := UploadImages(piwigomock, dbmock)
 	if err != nil {
 		t.Error(err)
 	}
@@ -477,7 +477,7 @@ func Test_uploadImages_saves_same_id_to_db(t *testing.T) {
 	piwigomock := NewMockPiwigoImageApi(mockCtrl)
 	piwigomock.EXPECT().UploadImage(5, "/nonexisting/file.jpg", "1234", 2).Times(1).Return(5, nil)
 
-	err := uploadImages(piwigomock, dbmock)
+	err := UploadImages(piwigomock, dbmock)
 	if err != nil {
 		t.Error(err)
 	}
@@ -520,7 +520,7 @@ func Test_deleteImages_should_call_piwigo_and_remove_metadata(t *testing.T) {
 	piwigomock := NewMockPiwigoImageApi(mockCtrl)
 	piwigomock.EXPECT().DeleteImages([]int{5}).Times(1).Return(nil)
 
-	err := deleteImages(piwigomock, dbmock)
+	err := DeleteImages(piwigomock, dbmock)
 	if err != nil {
 		t.Error(err)
 	}
@@ -542,7 +542,7 @@ func Test_deleteImages_should_not_call_piwigo_for_not_uploaded_images_and_remove
 	piwigomock := NewMockPiwigoImageApi(mockCtrl)
 	piwigomock.EXPECT().DeleteImages(gomock.Any()).Times(0)
 
-	err := deleteImages(piwigomock, dbmock)
+	err := DeleteImages(piwigomock, dbmock)
 	if err != nil {
 		t.Error(err)
 	}
@@ -561,7 +561,7 @@ func Test_deleteImages_should_not_call_anything_if_no_images_are_marked_for_dele
 	piwigomock := NewMockPiwigoImageApi(mockCtrl)
 	piwigomock.EXPECT().DeleteImages(gomock.Any()).Times(0)
 
-	err := deleteImages(piwigomock, dbmock)
+	err := DeleteImages(piwigomock, dbmock)
 	if err != nil {
 		t.Error(err)
 	}

@@ -3,7 +3,7 @@
  * This application is licensed under GPLv2. See the LICENSE file in the root directory of the project.
  */
 
-package app
+package images
 
 import (
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore"
@@ -22,9 +22,9 @@ type fileChecksumCalculator func(filePath string) (string, error)
 
 // Update the local image metadata by walking through all found files and check if the modification date has changed
 // or if they are new to the local database. If the files is new or changed, the md5sum will be rebuilt as well.
-func synchronizeLocalImageMetadata(metadataStorage datastore.ImageMetadataProvider, fileSystemNodes map[string]*localFileStructure.FilesystemNode, categories map[string]*piwigo.PiwigoCategory, checksumCalculator fileChecksumCalculator) error {
-	logrus.Debug("Starting synchronizeLocalImageMetadata")
-	defer logrus.Debug("Leaving synchronizeLocalImageMetadata")
+func SynchronizeLocalImageMetadata(metadataStorage datastore.ImageMetadataProvider, fileSystemNodes map[string]*localFileStructure.FilesystemNode, categories map[string]*piwigo.PiwigoCategory, checksumCalculator fileChecksumCalculator) error {
+	logrus.Debug("Starting SynchronizeLocalImageMetadata")
+	defer logrus.Debug("Leaving SynchronizeLocalImageMetadata")
 
 	logrus.Info("Synchronizing local image metadata database with local available images")
 
@@ -93,8 +93,8 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 }
 
 func synchronizeLocalImageMetadataFindFilesToDelete(provider datastore.ImageMetadataProvider) error {
-	logrus.Debug("Entering synchronizeLocalImageMetadataFindFilesToDelete")
-	defer logrus.Debug("Leaving synchronizeLocalImageMetadataFindFilesToDelete")
+	logrus.Debug("Entering SynchronizeLocalImageMetadataFindFilesToDelete")
+	defer logrus.Debug("Leaving SynchronizeLocalImageMetadataFindFilesToDelete")
 
 	images, err := provider.ImageMetadataAll()
 	if err != nil {
@@ -116,7 +116,7 @@ func synchronizeLocalImageMetadataFindFilesToDelete(provider datastore.ImageMeta
 
 // Uploads the pending images to the piwigo gallery and assign the category of to the image.
 // Update local metadata and set upload flag to false. Also updates the piwigo image id if there was a difference.
-func uploadImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
+func UploadImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
 	logrus.Debug("Starting uploadImages")
 	defer logrus.Debug("Finished uploadImages successfully")
 
@@ -153,7 +153,7 @@ func uploadImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.Im
 	return nil
 }
 
-func deleteImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
+func DeleteImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
 	logrus.Debug("Starting deleteImages")
 	defer logrus.Debug("Finished deleteImages successfully")
 
@@ -190,9 +190,9 @@ func deleteImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.Im
 }
 
 // This method aggregates the check for files with missing piwigoids and if changed files need to be uploaded again.
-func synchronizePiwigoMetadata(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
-	logrus.Debug("Entering synchronizePiwigoMetadata")
-	defer logrus.Debug("Leaving synchronizePiwigoMetadata")
+func SynchronizePiwigoMetadata(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
+	logrus.Debug("Entering SynchronizePiwigoMetadata")
+	defer logrus.Debug("Leaving SynchronizePiwigoMetadata")
 
 	// TODO: check if category has to be assigned (image possibly added to two albums -> only uploaded once but assigned multiple times) -> implement later
 	err := updatePiwigoIdIfAlreadyUploaded(metadataProvider, piwigoCtx)
