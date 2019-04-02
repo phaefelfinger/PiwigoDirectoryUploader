@@ -3,7 +3,7 @@
  * This application is licensed under GPLv2. See the LICENSE file in the root directory of the project.
  */
 
-package app
+package category
 
 import (
 	"errors"
@@ -15,13 +15,13 @@ import (
 	"sort"
 )
 
-func getAllCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi) (map[string]*piwigo.PiwigoCategory, error) {
+func GetAllCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi) (map[string]*piwigo.PiwigoCategory, error) {
 	logrus.Debugln("Starting GetAllCategories")
 	categories, err := piwigoApi.GetAllCategories()
 	return categories, err
 }
 
-func synchronizeCategories(piwigoApi piwigo.PiwigoCategoryApi, filesystemNodes map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*piwigo.PiwigoCategory) error {
+func SynchronizeCategories(piwigoApi piwigo.PiwigoCategoryApi, filesystemNodes map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*piwigo.PiwigoCategory) error {
 	logrus.Infoln("Synchronizing categories...")
 
 	missingCategories := findMissingCategories(filesystemNodes, existingCategories)

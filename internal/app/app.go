@@ -7,6 +7,7 @@ package app
 
 import (
 	"flag"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/category"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/images"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"github.com/sirupsen/logrus"
@@ -39,12 +40,12 @@ func Run() {
 		logErrorAndExit(err, 3)
 	}
 
-	categories, err := getAllCategoriesFromServer(context.piwigo)
+	categories, err := category.GetAllCategoriesFromServer(context.piwigo)
 	if err != nil {
 		logErrorAndExit(err, 4)
 	}
 
-	err = synchronizeCategories(context.piwigo, filesystemNodes, categories)
+	err = category.SynchronizeCategories(context.piwigo, filesystemNodes, categories)
 	if err != nil {
 		logErrorAndExit(err, 5)
 	}
