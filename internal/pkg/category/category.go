@@ -8,12 +8,17 @@ package category
 import (
 	"errors"
 	"fmt"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
 	"path/filepath"
 	"sort"
 )
+
+func SynchronizePiwigoCategories(piwigoApi piwigo.PiwigoCategoryApi, datastore datastore.CategoryProvider) error {
+	return errors.New("N/A")
+}
 
 func GetAllCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi) (map[string]*piwigo.PiwigoCategory, error) {
 	logrus.Debugln("Starting GetAllCategories")
