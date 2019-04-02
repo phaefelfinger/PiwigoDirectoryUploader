@@ -3,9 +3,7 @@
  * This application is licensed under GPLv2. See the LICENSE file in the root directory of the project.
  */
 
-package app
-
-//go:generate mockgen -destination=./datastore_mock_test.go -package=app git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/app ImageMetadataProvider
+package datastore
 
 import (
 	"database/sql"
@@ -45,11 +43,15 @@ type ImageMetadataProvider interface {
 	DeleteMarkedImages() error
 }
 
-type localDataStore struct {
+type LocalDataStore struct {
 	connectionString string
 }
 
-func (d *localDataStore) Initialize(connectionString string) error {
+func NewLocalDataStore() *LocalDataStore {
+	return &LocalDataStore{}
+}
+
+func (d *LocalDataStore) Initialize(connectionString string) error {
 	if connectionString == "" {
 		return errors.New("connection string could not be empty.")
 	}
@@ -67,7 +69,7 @@ func (d *localDataStore) Initialize(connectionString string) error {
 	return err
 }
 
-func (d *localDataStore) ImageMetadata(fullImagePath string) (ImageMetaData, error) {
+func (d *LocalDataStore) ImageMetadata(fullImagePath string) (ImageMetaData, error) {
 	logrus.Tracef("Query image metadata for file %s", fullImagePath)
 	img := ImageMetaData{}
 
@@ -101,7 +103,7 @@ func (d *localDataStore) ImageMetadata(fullImagePath string) (ImageMetaData, err
 	return img, err
 }
 
-func (d *localDataStore) ImageMetadataAll() ([]ImageMetaData, error) {
+func (d *LocalDataStore) ImageMetadataAll() ([]ImageMetaData, error) {
 	logrus.Tracef("Query all image metadata that represent files on the disk")
 
 	db, err := d.openDatabase()
@@ -130,7 +132,7 @@ func (d *localDataStore) ImageMetadataAll() ([]ImageMetaData, error) {
 	return images, err
 }
 
-func (d *localDataStore) ImageMetadataToDelete() ([]ImageMetaData, error) {
+func (d *LocalDataStore) ImageMetadataToDelete() ([]ImageMetaData, error) {
 	logrus.Tracef("Query all image metadata that represent files queued to delete")
 
 	db, err := d.openDatabase()
@@ -159,7 +161,7 @@ func (d *localDataStore) ImageMetadataToDelete() ([]ImageMetaData, error) {
 	return images, err
 }
 
-func (d *localDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
+func (d *LocalDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 	logrus.Tracef("Query all image metadata that represent files queued to upload")
 
 	db, err := d.openDatabase()
@@ -193,7 +195,7 @@ func ReadImageMetadataFromRow(rows *sql.Rows, img *ImageMetaData) error {
 	return err
 }
 
-func (d *localDataStore) SaveImageMetadata(img ImageMetaData) error {
+func (d *LocalDataStore) SaveImageMetadata(img ImageMetaData) error {
 	logrus.Tracef("Saving imagemetadata: %s", img.String())
 	db, err := d.openDatabase()
 	if err != nil {
@@ -225,7 +227,7 @@ func (d *localDataStore) SaveImageMetadata(img ImageMetaData) error {
 	return tx.Commit()
 }
 
-func (d *localDataStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int) error {
+func (d *LocalDataStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int) error {
 	logrus.Tracef("Saving piwigo id %d for file with md5sum %s", piwigoId, md5Sum)
 	db, err := d.openDatabase()
 	if err != nil {
@@ -266,7 +268,7 @@ func (d *localDataStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId
 	return tx.Commit()
 }
 
-func (d *localDataStore) DeleteMarkedImages() error {
+func (d *LocalDataStore) DeleteMarkedImages() error {
 	logrus.Trace("Deleting marked records from database...")
 	db, err := d.openDatabase()
 	if err != nil {
@@ -293,7 +295,7 @@ func (d *localDataStore) DeleteMarkedImages() error {
 	return tx.Commit()
 }
 
-func (d *localDataStore) insertImageMetaData(tx *sql.Tx, data ImageMetaData) error {
+func (d *LocalDataStore) insertImageMetaData(tx *sql.Tx, data ImageMetaData) error {
 	stmt, err := tx.Prepare("INSERT INTO image (piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired, deleteRequired) VALUES (?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
@@ -302,7 +304,7 @@ func (d *localDataStore) insertImageMetaData(tx *sql.Tx, data ImageMetaData) err
 	return err
 }
 
-func (d *localDataStore) openDatabase() (*sql.DB, error) {
+func (d *LocalDataStore) openDatabase() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", d.connectionString)
 	if err != nil {
 		logrus.Warnf("Could not open database %s", d.connectionString)
@@ -313,7 +315,7 @@ func (d *localDataStore) openDatabase() (*sql.DB, error) {
 	return db, err
 }
 
-func (d *localDataStore) createTablesIfNeeded(db *sql.DB) error {
+func (d *LocalDataStore) createTablesIfNeeded(db *sql.DB) error {
 	_, err := db.Exec("CREATE TABLE IF NOT EXISTS image (" +
 		"imageId INTEGER PRIMARY KEY," +
 		"piwigoId INTEGER NULL," +
@@ -334,7 +336,7 @@ func (d *localDataStore) createTablesIfNeeded(db *sql.DB) error {
 	return err
 }
 
-func (d *localDataStore) updateImageMetaData(tx *sql.Tx, data ImageMetaData) error {
+func (d *LocalDataStore) updateImageMetaData(tx *sql.Tx, data ImageMetaData) error {
 	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ?, fullImagePath = ?, fileName = ?, md5sum = ?, lastChanged = ?, categoryPath = ?, categoryId = ?, uploadRequired = ?, deleteRequired = ? WHERE imageId = ?")
 	if err != nil {
 		return err

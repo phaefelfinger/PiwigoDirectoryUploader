@@ -6,6 +6,7 @@
 package app
 
 import (
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
@@ -21,7 +22,7 @@ type fileChecksumCalculator func(filePath string) (string, error)
 
 // Update the local image metadata by walking through all found files and check if the modification date has changed
 // or if they are new to the local database. If the files is new or changed, the md5sum will be rebuilt as well.
-func synchronizeLocalImageMetadata(metadataStorage ImageMetadataProvider, fileSystemNodes map[string]*localFileStructure.FilesystemNode, categories map[string]*piwigo.PiwigoCategory, checksumCalculator fileChecksumCalculator) error {
+func synchronizeLocalImageMetadata(metadataStorage datastore.ImageMetadataProvider, fileSystemNodes map[string]*localFileStructure.FilesystemNode, categories map[string]*piwigo.PiwigoCategory, checksumCalculator fileChecksumCalculator) error {
 	logrus.Debug("Starting synchronizeLocalImageMetadata")
 	defer logrus.Debug("Leaving synchronizeLocalImageMetadata")
 
@@ -39,7 +40,7 @@ func synchronizeLocalImageMetadata(metadataStorage ImageMetadataProvider, fileSy
 	return nil
 }
 
-func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*localFileStructure.FilesystemNode, metadataStorage ImageMetadataProvider, categories map[string]*piwigo.PiwigoCategory, checksumCalculator fileChecksumCalculator) error {
+func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*localFileStructure.FilesystemNode, metadataStorage datastore.ImageMetadataProvider, categories map[string]*piwigo.PiwigoCategory, checksumCalculator fileChecksumCalculator) error {
 	logrus.Debug("Entering synchronizeLocalImageMetadataScanNewFiles")
 	defer logrus.Debug("Leaving synchronizeLocalImageMetadataScanNewFiles")
 
@@ -50,9 +51,9 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 		}
 
 		metadata, err := metadataStorage.ImageMetadata(file.Path)
-		if err == ErrorRecordNotFound {
+		if err == datastore.ErrorRecordNotFound {
 			logrus.Debugf("Creating new metadata entry for %s.", file.Path)
-			metadata = ImageMetaData{}
+			metadata = datastore.ImageMetaData{}
 			metadata.Filename = file.Name
 			metadata.FullImagePath = file.Path
 			metadata.CategoryPath = filepath.Dir(file.Key)
@@ -91,7 +92,7 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 	return nil
 }
 
-func synchronizeLocalImageMetadataFindFilesToDelete(provider ImageMetadataProvider) error {
+func synchronizeLocalImageMetadataFindFilesToDelete(provider datastore.ImageMetadataProvider) error {
 	logrus.Debug("Entering synchronizeLocalImageMetadataFindFilesToDelete")
 	defer logrus.Debug("Leaving synchronizeLocalImageMetadataFindFilesToDelete")
 
@@ -115,7 +116,7 @@ func synchronizeLocalImageMetadataFindFilesToDelete(provider ImageMetadataProvid
 
 // Uploads the pending images to the piwigo gallery and assign the category of to the image.
 // Update local metadata and set upload flag to false. Also updates the piwigo image id if there was a difference.
-func uploadImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider ImageMetadataProvider) error {
+func uploadImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
 	logrus.Debug("Starting uploadImages")
 	defer logrus.Debug("Finished uploadImages successfully")
 
@@ -152,7 +153,7 @@ func uploadImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider ImageMetadat
 	return nil
 }
 
-func deleteImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider ImageMetadataProvider) error {
+func deleteImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
 	logrus.Debug("Starting deleteImages")
 	defer logrus.Debug("Finished deleteImages successfully")
 
@@ -189,7 +190,7 @@ func deleteImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider ImageMetadat
 }
 
 // This method aggregates the check for files with missing piwigoids and if changed files need to be uploaded again.
-func synchronizePiwigoMetadata(piwigoCtx piwigo.PiwigoImageApi, metadataProvider ImageMetadataProvider) error {
+func synchronizePiwigoMetadata(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
 	logrus.Debug("Entering synchronizePiwigoMetadata")
 	defer logrus.Debug("Leaving synchronizePiwigoMetadata")
 
@@ -208,7 +209,7 @@ func synchronizePiwigoMetadata(piwigoCtx piwigo.PiwigoImageApi, metadataProvider
 }
 
 // Check all images with upload required if they are really changed and need to be uploaded to the server.
-func checkPiwigoForChangedImages(provider ImageMetadataProvider, piwigoCtx piwigo.PiwigoImageApi) error {
+func checkPiwigoForChangedImages(provider datastore.ImageMetadataProvider, piwigoCtx piwigo.PiwigoImageApi) error {
 	logrus.Info("Checking pending files if they really differ from the version in piwigo...")
 	defer logrus.Info("Finished checking pending files if they really differ from the version in piwigo...")
 
@@ -247,7 +248,7 @@ func checkPiwigoForChangedImages(provider ImageMetadataProvider, piwigoCtx piwig
 
 // This function calls piwigo and checks if the given md5sum is already present.
 // Only files without a piwigo id are used to query the server.
-func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx piwigo.PiwigoImageApi) error {
+func updatePiwigoIdIfAlreadyUploaded(provider datastore.ImageMetadataProvider, piwigoCtx piwigo.PiwigoImageApi) error {
 	logrus.Info("checking for pending files that are already on piwigo and updating piwigoids...")
 	defer logrus.Info("finshed checking for pending files that are already on piwigo and updating piwigoids...")
 
@@ -294,6 +295,6 @@ func updatePiwigoIdIfAlreadyUploaded(provider ImageMetadataProvider, piwigoCtx p
 	return nil
 }
 
-func fileDidNotChange(metadata *ImageMetaData, file *localFileStructure.FilesystemNode) bool {
+func fileDidNotChange(metadata *datastore.ImageMetaData, file *localFileStructure.FilesystemNode) bool {
 	return metadata.LastChange.Equal(file.ModTime) && !metadata.DeleteRequired
 }

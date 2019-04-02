@@ -3,7 +3,7 @@
  * This application is licensed under GPLv2. See the LICENSE file in the root directory of the project.
  */
 
-package app
+package datastore
 
 import (
 	"os"
@@ -288,14 +288,14 @@ func Test_deleteMarkedImages_should_remove_records(t *testing.T) {
 	}
 }
 
-func saveImageShouldNotFail(action string, dataStore *localDataStore, img ImageMetaData, t *testing.T) {
+func saveImageShouldNotFail(action string, dataStore *LocalDataStore, img ImageMetaData, t *testing.T) {
 	err := dataStore.SaveImageMetadata(img)
 	if err != nil {
 		t.Errorf("%s: Could not save Metadata: %s", action, err)
 	}
 }
 
-func loadMetadataShouldNotFail(action string, dataStore *localDataStore, filePath string, t *testing.T) ImageMetaData {
+func loadMetadataShouldNotFail(action string, dataStore *LocalDataStore, filePath string, t *testing.T) ImageMetaData {
 	imgLoad, err := dataStore.ImageMetadata(filePath)
 	if err != nil {
 		t.Errorf("%s: Could not load saved Metadata: %s - %s", action, filePath, err)
@@ -330,8 +330,8 @@ func cleanupDatabase(t *testing.T) {
 	}
 }
 
-func setupDatabase(t *testing.T) *localDataStore {
-	dataStore := &localDataStore{}
+func setupDatabase(t *testing.T) *LocalDataStore {
+	dataStore := &LocalDataStore{}
 	err := dataStore.Initialize(databaseFile)
 	if err != nil {
 		t.Errorf("Failed to init datastore: %s", err)

@@ -7,6 +7,7 @@ package app
 
 import (
 	"errors"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
 )
@@ -14,7 +15,7 @@ import (
 type appContext struct {
 	// think again if this is a good idea to have such a context!
 	piwigo        *piwigo.PiwigoContext
-	dataStore     *localDataStore
+	dataStore     *datastore.LocalDataStore
 	sessionId     string
 	localRootPath string
 }
@@ -25,7 +26,7 @@ func (c *appContext) UseMetadataStore(connectionString string) error {
 	}
 
 	logrus.Infof("Using SQL Lite data store with '%s'", connectionString)
-	c.dataStore = &localDataStore{}
+	c.dataStore = datastore.NewLocalDataStore()
 	err := c.dataStore.Initialize(connectionString)
 
 	return err
