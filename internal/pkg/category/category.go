@@ -24,14 +24,27 @@ func SynchronizePiwigoCategories(piwigoApi piwigo.PiwigoCategoryApi, db datastor
 	}
 
 	for _, pwgcat := range categories {
-		cat := datastore.CategoryData{
-			PiwigoId:       pwgcat.Id,
-			PiwigoParentId: pwgcat.ParentId,
-			Name:           pwgcat.Name,
-			Key:            pwgcat.Key,
+
+		dbcat, err := db.GetCategoryByPiwigoId(pwgcat.Id)
+		if err == datastore.ErrorRecordNotFound {
+			logrus.Debugf("Adding category %s", pwgcat.Key)
+			dbcat = datastore.CategoryData{
+				PiwigoId:       pwgcat.Id,
+			}
+		} else if err != nil {
+			return err
 		}
 
-		err = db.SaveCategory(cat)
+		if dbcat.Name == pwgcat.Name && dbcat.Key == pwgcat.Key && dbcat.PiwigoParentId == pwgcat.ParentId {
+			logrus.Debugf("No changes for category %s", dbcat.Key)
+			continue
+		}
+
+		dbcat.Name = pwgcat.Name
+		dbcat.Key = pwgcat.Key
+		dbcat.PiwigoParentId = pwgcat.ParentId
+
+		err = db.SaveCategory(dbcat)
 		if err != nil {
 			return err
 		}
