@@ -20,15 +20,18 @@ func Test_SynchronizePiwigoCategories_adds_new_categories(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	piwigoCategory := createTestPiwigoCategory(1)
-	piwigoCategories := []piwigo.PiwigoCategory{piwigoCategory}
+
+	piwigoCategories := make(map[string]*piwigo.PiwigoCategory)
+	piwigoCategories[piwigoCategory.Key] = &piwigoCategory
+	numberOfCategories := len(piwigoCategories)
 
 	category := createTestCategoryData(1)
 
 	dbmock := NewMockCategoryProvider(mockCtrl)
-	dbmock.EXPECT().SaveCategory(category).Times(1)
+	dbmock.EXPECT().SaveCategory(category).Times(numberOfCategories)
 
 	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
-	piwigoMock.EXPECT().GetAllCategories().Return(piwigoCategories).Times(1)
+	piwigoMock.EXPECT().GetAllCategories().Return(piwigoCategories, nil).Times(len(piwigoCategories))
 
 	err := SynchronizePiwigoCategories(piwigoMock, dbmock)
 	if err != nil {
@@ -48,7 +51,7 @@ func createTestPiwigoCategory(piwigoId int) piwigo.PiwigoCategory {
 
 func createTestCategoryData(piwigoId int) datastore.CategoryData {
 	cat := datastore.CategoryData{
-		CategoryId:     1,
+		CategoryId:     0,
 		PiwigoId:       piwigoId,
 		PiwigoParentId: 0,
 		Name:           "2019",

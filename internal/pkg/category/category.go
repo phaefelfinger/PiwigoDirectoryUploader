@@ -16,8 +16,28 @@ import (
 	"sort"
 )
 
-func SynchronizePiwigoCategories(piwigoApi piwigo.PiwigoCategoryApi, datastore datastore.CategoryProvider) error {
-	return errors.New("N/A")
+func SynchronizePiwigoCategories(piwigoApi piwigo.PiwigoCategoryApi, db datastore.CategoryProvider) error {
+
+	categories, err := piwigoApi.GetAllCategories()
+	if err != nil {
+		return err
+	}
+
+	for _, pwgcat := range categories {
+		cat := datastore.CategoryData{
+			PiwigoId:       pwgcat.Id,
+			PiwigoParentId: pwgcat.ParentId,
+			Name:           pwgcat.Name,
+			Key:            pwgcat.Key,
+		}
+
+		err = db.SaveCategory(cat)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func GetAllCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi) (map[string]*piwigo.PiwigoCategory, error) {
