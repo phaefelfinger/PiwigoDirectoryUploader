@@ -40,43 +40,38 @@ func Run() {
 		logErrorAndExit(err, 3)
 	}
 
-	categories, err := category.GetAllCategoriesFromServer(context.piwigo)
-	if err != nil {
-		logErrorAndExit(err, 4)
-	}
-
-	err = category.SynchronizeCategories(context.piwigo, filesystemNodes, categories)
-	if err != nil {
-		logErrorAndExit(err, 5)
-	}
-
-	err = images.SynchronizeLocalImageMetadata(context.dataStore, filesystemNodes, categories, localFileStructure.CalculateFileCheckSums)
-	if err != nil {
-		logErrorAndExit(err, 6)
-	}
-
-	err = images.SynchronizePiwigoMetadata(context.piwigo, context.dataStore)
-	if err != nil {
-		logErrorAndExit(err, 7)
-	}
-
-	if *removeImages {
-		err = images.DeleteImages(context.piwigo, context.dataStore)
-		if err != nil {
-			logErrorAndExit(err, 8)
-		}
-	} else {
-		logrus.Info("The flag removeImages is disabled. Skipping...")
-	}
-
-	if !(*noUpload) {
-		err = images.UploadImages(context.piwigo, context.dataStore)
-		if err != nil {
-			logErrorAndExit(err, 9)
-		}
-	} else {
-		logrus.Warnln("Skipping upload of images as flag noUpload is set to true!")
-	}
+	//err = category.SynchronizeCategories(filesystemNodes, context.piwigo, context.dataStore)
+	//if err != nil {
+	//	logErrorAndExit(err, 4)
+	//}
+	//
+	//err = images.SynchronizeLocalImageMetadata(context.dataStore, filesystemNodes, categories, localFileStructure.CalculateFileCheckSums)
+	//if err != nil {
+	//	logErrorAndExit(err, 5)
+	//}
+	//
+	//err = images.SynchronizePiwigoMetadata(context.piwigo, context.dataStore)
+	//if err != nil {
+	//	logErrorAndExit(err, 6)
+	//}
+	//
+	//if *removeImages {
+	//	err = images.DeleteImages(context.piwigo, context.dataStore)
+	//	if err != nil {
+	//		logErrorAndExit(err, 7)
+	//	}
+	//} else {
+	//	logrus.Info("The flag removeImages is disabled. Skipping...")
+	//}
+	//
+	//if !(*noUpload) {
+	//	err = images.UploadImages(context.piwigo, context.dataStore)
+	//	if err != nil {
+	//		logErrorAndExit(err, 8)
+	//	}
+	//} else {
+	//	logrus.Warnln("Skipping upload of images as flag noUpload is set to true!")
+	//}
 
 	_ = context.piwigo.Logout()
 }
