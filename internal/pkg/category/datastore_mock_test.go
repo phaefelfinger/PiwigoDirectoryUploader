@@ -33,6 +33,21 @@ func (m *MockCategoryProvider) EXPECT() *MockCategoryProviderMockRecorder {
 	return m.recorder
 }
 
+// GetCategoriesToCreate mocks base method
+func (m *MockCategoryProvider) GetCategoriesToCreate() ([]datastore.CategoryData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCategoriesToCreate")
+	ret0, _ := ret[0].([]datastore.CategoryData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCategoriesToCreate indicates an expected call of GetCategoriesToCreate
+func (mr *MockCategoryProviderMockRecorder) GetCategoriesToCreate() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCategoriesToCreate", reflect.TypeOf((*MockCategoryProvider)(nil).GetCategoriesToCreate))
+}
+
 // GetCategoryByKey mocks base method
 func (m *MockCategoryProvider) GetCategoryByKey(arg0 string) (datastore.CategoryData, error) {
 	m.ctrl.T.Helper()
