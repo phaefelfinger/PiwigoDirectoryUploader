@@ -7,9 +7,6 @@ package app
 
 import (
 	"flag"
-	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/category"
-	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/images"
-	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -35,10 +32,10 @@ func Run() {
 		logErrorAndExit(err, 2)
 	}
 
-	filesystemNodes, err := localFileStructure.ScanLocalFileStructure(context.localRootPath)
-	if err != nil {
-		logErrorAndExit(err, 3)
-	}
+	//filesystemNodes, err := localFileStructure.ScanLocalFileStructure(context.localRootPath)
+	//if err != nil {
+	//	logErrorAndExit(err, 3)
+	//}
 
 	//err = category.SynchronizeCategories(filesystemNodes, context.piwigo, context.dataStore)
 	//if err != nil {
