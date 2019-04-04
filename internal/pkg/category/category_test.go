@@ -23,10 +23,47 @@ func Test_SynchronizePiwigoCategories_adds_new_categories(t *testing.T) {
 	dbCategories := createDbCategoriesFrom(piwigoCategories)
 
 	dbmock := NewMockCategoryProvider(mockCtrl)
-
+	dbmock.EXPECT().GetCategoryByPiwigoId(gomock.Any()).Return(datastore.CategoryData{}, datastore.ErrorRecordNotFound).Times(len(piwigoCategories))
 	for _, cat := range dbCategories {
 		dbmock.EXPECT().SaveCategory(cat).Times(1)
 	}
+
+	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
+	piwigoMock.EXPECT().GetAllCategories().Return(piwigoCategories, nil).Times(1)
+
+	err := SynchronizePiwigoCategories(piwigoMock, dbmock)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_SynchronizePiwigoCategories_updates_a_category(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	piwigoCategories := createTwoServerCategories()
+
+	oldCategory := datastore.CategoryData{
+		PiwigoId:       1,
+		PiwigoParentId: 0,
+		CategoryId:     1,
+		Key:            "oldKey",
+		Name:           "oldName",
+	}
+
+	expectedCategory := datastore.CategoryData{
+		PiwigoId:       1,
+		PiwigoParentId: 0,
+		CategoryId:     1,
+		Name:           "2019",
+		Key:            "2019",
+	}
+
+	dbmock := NewMockCategoryProvider(mockCtrl)
+	dbmock.EXPECT().GetCategoryByPiwigoId(1).Return(oldCategory, nil).Times(1)
+	dbmock.EXPECT().GetCategoryByPiwigoId(gomock.Any()).Return(datastore.CategoryData{}, datastore.ErrorRecordNotFound).Times(1)
+	dbmock.EXPECT().SaveCategory(expectedCategory).Times(1)
+	dbmock.EXPECT().SaveCategory(gomock.Any()).Times(1)
 
 	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
 	piwigoMock.EXPECT().GetAllCategories().Return(piwigoCategories, nil).Times(1)
