@@ -13,8 +13,60 @@ import (
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/sirupsen/logrus"
 	"path/filepath"
-	"sort"
 )
+
+func SynchronizeCategories(filesystemNodes map[string]*localFileStructure.FilesystemNode, piwigoApi piwigo.PiwigoCategoryApi, db datastore.CategoryProvider) error {
+	logrus.Debug("Entering SynchronizeCategories...")
+	defer logrus.Debug("Leaving SynchronizeCategories...")
+
+	err := updatePiwigoCategoriesFromServer(piwigoApi, db)
+	if err != nil {
+		return err
+	}
+
+	logrus.Infoln("Adding missing categories to local db...")
+	err = addMissingPiwigoCategoriesToLocalDb(db, filesystemNodes)
+	if err != nil {
+		return err
+	}
+
+	return createMissingCategories(piwigoApi, db)
+}
+
+func addMissingPiwigoCategoriesToLocalDb(db datastore.CategoryProvider, fileSystemNodes map[string]*localFileStructure.FilesystemNode) error {
+	logrus.Debug("Entering addMissingPiwigoCategoriesToLocalDb...")
+	defer logrus.Debug("Leave addMissingPiwigoCategoriesToLocalDb...")
+
+	for _, file := range fileSystemNodes {
+		if !file.IsDir {
+			logrus.Tracef("%s: Skipping as no directory", file.Key)
+			continue
+		}
+
+		_, err := db.GetCategoryByKey(file.Key)
+		if err == nil {
+			logrus.Debugf("%s already exists.", file.Key)
+			continue
+		}
+		if err != datastore.ErrorRecordNotFound {
+			return err
+		}
+
+		logrus.Debugf("Creating missing category %s", file.Key)
+		category := datastore.CategoryData{
+			Key:            file.Key,
+			Name:           file.Name,
+			PiwigoParentId: 0,
+			PiwigoId:       0,
+		}
+
+		err = db.SaveCategory(category)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func updatePiwigoCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi, db datastore.CategoryProvider) error {
 	logrus.Debug("Entering updatePiwigoCategoriesFromServer")
@@ -54,91 +106,59 @@ func updatePiwigoCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi, db dat
 	return nil
 }
 
-func GetAllCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi) (map[string]*piwigo.PiwigoCategory, error) {
-	logrus.Debugln("Starting GetAllCategories")
-	categories, err := piwigoApi.GetAllCategories()
-	return categories, err
-}
+func createMissingCategories(piwigoApi piwigo.PiwigoCategoryApi, db datastore.CategoryProvider) error {
+	logrus.Debug("Entering createMissingCategories...")
+	defer logrus.Debug("Leaving createMissingCategories...")
 
-func SynchronizeCategories(piwigoApi piwigo.PiwigoCategoryApi, filesystemNodes map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*piwigo.PiwigoCategory) error {
-	logrus.Infoln("Synchronizing categories...")
-
-	missingCategories := findMissingCategories(filesystemNodes, existingCategories)
-
-	if len(missingCategories) == 0 {
-		logrus.Infof("No categories missing!")
-		return nil
+	missingCategories, err := db.GetCategoriesToCreate()
+	if err != nil {
+		return err
 	}
-
-	return createMissingCategories(piwigoApi, missingCategories, existingCategories)
-}
-
-func findMissingCategories(fileSystem map[string]*localFileStructure.FilesystemNode, existingCategories map[string]*piwigo.PiwigoCategory) []string {
-	missingCategories := make([]string, 0, len(fileSystem))
-
-	for _, file := range fileSystem {
-		if !file.IsDir {
-			continue
-		}
-
-		_, exists := existingCategories[file.Key]
-
-		if exists {
-			logrus.Debugf("Found existing category %s", file.Key)
-		} else {
-			logrus.Infof("Missing category detected %s", file.Key)
-			missingCategories = append(missingCategories, file.Key)
-		}
-	}
-
-	return missingCategories
-}
-
-func createMissingCategories(piwigoApi piwigo.PiwigoCategoryApi, missingCategories []string, existingCategories map[string]*piwigo.PiwigoCategory) error {
-	// we sort them to make sure the categories gets created
-	// in the right order and we have the parent available while creating the children
-	sort.Strings(missingCategories)
 
 	logrus.Infof("Creating %d categories", len(missingCategories))
 
-	for _, categoryKey := range missingCategories {
-		logrus.Infof("Creating category %s", categoryKey)
+	for _, category := range missingCategories {
+		logrus.Infof("Creating category %s", category.Key)
 
-		name, parentId, err := getNameAndParentId(categoryKey, existingCategories)
+		parentId, err := getParentId(category, db)
 		if err != nil {
 			return err
 		}
 
 		// create category on piwigo
-		id, err := piwigoApi.CreateCategory(parentId, name)
+		id, err := piwigoApi.CreateCategory(parentId, category.Name)
 		if err != nil {
 			return errors.New(fmt.Sprintf("Could not create category on piwigo: %s", err))
 		}
 
-		newCategory := piwigo.PiwigoCategory{Id: id, Name: name, ParentId: parentId, Key: categoryKey}
-		logrus.Println(newCategory)
-		existingCategories[newCategory.Key] = &newCategory
+		// update local category information
+		category.PiwigoId = id
+		category.PiwigoParentId = parentId
+
+		err = db.SaveCategory(category)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func getNameAndParentId(category string, categories map[string]*piwigo.PiwigoCategory) (string, int, error) {
-	parentKey := filepath.Dir(category)
-	_, name := filepath.Split(category)
-	if name == category {
-		logrus.Debugf("The category %s is a root category, there is no parent", name)
-		return name, 0, nil
+func getParentId(category datastore.CategoryData, db datastore.CategoryProvider) (int, error) {
+	parentKey := filepath.Dir(category.Key)
+	if category.Name == parentKey {
+		logrus.Debugf("The category %s is a root category, there is no parent", category.Name)
+		return 0, nil
 	}
 
 	logrus.Debugf("Looking up parent with key %s", parentKey)
-	parent, exists := categories[parentKey]
-	if !exists {
-		return "", 0, errors.New(fmt.Sprintf("could not find parent with key %s", parentKey))
+	parentCategory, err := db.GetCategoryByKey(parentKey)
+	if err == datastore.ErrorRecordNotFound {
+		return 0, err
+	}
+	if err != nil {
+		return 0, err
 	}
 
-	parentId := parent.Id
-	logrus.Debugf("Found parent %s with id %d", parentKey, parentId)
-
-	return name, parentId, nil
+	return parentCategory.PiwigoId, nil
 }
