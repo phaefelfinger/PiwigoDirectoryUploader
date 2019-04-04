@@ -49,6 +49,7 @@ type CategoryProvider interface {
 	SaveCategory(category CategoryData) error
 	GetCategoryByPiwigoId(id int) (CategoryData, error)
 	GetCategoryByKey(key string) (CategoryData, error)
+	GetCategoriesToCreate()([]CategoryData, error)
 }
 
 type ImageMetadataProvider interface {
