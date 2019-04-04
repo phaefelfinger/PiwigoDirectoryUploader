@@ -15,7 +15,7 @@ import (
 //go:generate mockgen -destination=./piwigo_mock_test.go -package=category git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoApi,PiwigoCategoryApi,PiwigoImageApi
 //go:generate mockgen -destination=./datastore_mock_test.go -package=category git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore CategoryProvider
 
-func Test_SynchronizePiwigoCategories_adds_new_categories(t *testing.T) {
+func Test_updatePiwigoCategoriesFromServer_adds_new_categories(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -31,13 +31,13 @@ func Test_SynchronizePiwigoCategories_adds_new_categories(t *testing.T) {
 	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
 	piwigoMock.EXPECT().GetAllCategories().Return(piwigoCategories, nil).Times(1)
 
-	err := SynchronizePiwigoCategories(piwigoMock, dbmock)
+	err := updatePiwigoCategoriesFromServer(piwigoMock, dbmock)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
-func Test_SynchronizePiwigoCategories_updates_a_category(t *testing.T) {
+func Test_updatePiwigoCategoriesFromServer_updates_a_category(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -68,7 +68,7 @@ func Test_SynchronizePiwigoCategories_updates_a_category(t *testing.T) {
 	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
 	piwigoMock.EXPECT().GetAllCategories().Return(piwigoCategories, nil).Times(1)
 
-	err := SynchronizePiwigoCategories(piwigoMock, dbmock)
+	err := updatePiwigoCategoriesFromServer(piwigoMock, dbmock)
 	if err != nil {
 		t.Error(err)
 	}

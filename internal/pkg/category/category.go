@@ -16,7 +16,9 @@ import (
 	"sort"
 )
 
-func SynchronizePiwigoCategories(piwigoApi piwigo.PiwigoCategoryApi, db datastore.CategoryProvider) error {
+func updatePiwigoCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi, db datastore.CategoryProvider) error {
+	logrus.Debug("Entering updatePiwigoCategoriesFromServer")
+	defer logrus.Debug("Leaving updatePiwigoCategoriesFromServer")
 
 	categories, err := piwigoApi.GetAllCategories()
 	if err != nil {
@@ -24,12 +26,11 @@ func SynchronizePiwigoCategories(piwigoApi piwigo.PiwigoCategoryApi, db datastor
 	}
 
 	for _, pwgcat := range categories {
-
 		dbcat, err := db.GetCategoryByPiwigoId(pwgcat.Id)
 		if err == datastore.ErrorRecordNotFound {
 			logrus.Debugf("Adding category %s", pwgcat.Key)
 			dbcat = datastore.CategoryData{
-				PiwigoId:       pwgcat.Id,
+				PiwigoId: pwgcat.Id,
 			}
 		} else if err != nil {
 			return err
