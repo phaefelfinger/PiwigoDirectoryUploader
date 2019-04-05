@@ -6,10 +6,13 @@
 package category
 
 import (
+	"fmt"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
 	"github.com/golang/mock/gomock"
 	"testing"
+	"time"
 )
 
 //go:generate mockgen -destination=./piwigo_mock_test.go -package=category git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoApi,PiwigoCategoryApi,PiwigoImageApi
@@ -81,6 +84,97 @@ func Test_createMissingCategories_does_not_call_piwigo_if_there_is_no_category_m
 	piwigoMock.EXPECT().CreateCategory(gomock.Any(), gomock.Any()).Times(0)
 
 	err := createMissingCategories(piwigoMock, dbmock)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_addMissingPiwigoCategoriesToLocalDb_creates_category_in_database(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	expectedCategory := createDbRootCategory()
+	expectedCategory.PiwigoParentId = 0
+	expectedCategory.PiwigoId = 0
+	expectedCategory.CategoryId = 0
+
+	fileNode := &localFileStructure.FilesystemNode{
+		Name:    expectedCategory.Name,
+		Key:     expectedCategory.Key,
+		Path:    fmt.Sprintf("/home/nonexisting/%s", expectedCategory.Name),
+		ModTime: time.Now(),
+		IsDir:   true,
+	}
+
+	fileSystemNodes := make(map[string]*localFileStructure.FilesystemNode)
+	fileSystemNodes[fileNode.Key] = fileNode
+
+	dbmock := NewMockCategoryProvider(mockCtrl)
+	dbmock.EXPECT().GetCategoryByKey(fileNode.Key).Return(datastore.CategoryData{}, datastore.ErrorRecordNotFound).Times(1)
+	dbmock.EXPECT().SaveCategory(expectedCategory).Return(nil).Times(1)
+
+	err := addMissingPiwigoCategoriesToLocalDb(dbmock, fileSystemNodes)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_addMissingPiwigoCategoriesToLocalDb_does_nothing_already_in_db(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	fileNode := &localFileStructure.FilesystemNode{
+		Name:    "dir",
+		Key:     "dir",
+		Path:    "/home/nonexisting/dir",
+		ModTime: time.Now(),
+		IsDir:   true,
+	}
+
+	fileSystemNodes := make(map[string]*localFileStructure.FilesystemNode)
+	fileSystemNodes[fileNode.Key] = fileNode
+
+	dbmock := NewMockCategoryProvider(mockCtrl)
+	dbmock.EXPECT().GetCategoryByKey(fileNode.Key).Return(datastore.CategoryData{}, nil).Times(1)
+
+	err := addMissingPiwigoCategoriesToLocalDb(dbmock, fileSystemNodes)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_addMissingPiwigoCategoriesToLocalDb_does_nothing_if_list_contains_only_files(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	fileNode := &localFileStructure.FilesystemNode{
+		Name:    "file.jpg",
+		Key:     "file",
+		Path:    "/home/nonexisting/file.jpg",
+		ModTime: time.Now(),
+		IsDir:   false,
+	}
+
+	fileSystemNodes := make(map[string]*localFileStructure.FilesystemNode)
+	fileSystemNodes[fileNode.Key] = fileNode
+
+	dbmock := NewMockCategoryProvider(mockCtrl)
+
+	err := addMissingPiwigoCategoriesToLocalDb(dbmock, fileSystemNodes)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_addMissingPiwigoCategoriesToLocalDb_does_nothing_if_list_is_empty(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	var fileSystemNodes map[string]*localFileStructure.FilesystemNode
+
+	dbmock := NewMockCategoryProvider(mockCtrl)
+
+	err := addMissingPiwigoCategoriesToLocalDb(dbmock, fileSystemNodes)
 	if err != nil {
 		t.Error(err)
 	}
