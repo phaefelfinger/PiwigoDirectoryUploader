@@ -279,6 +279,25 @@ func Test_getParentId_finds_the_exptected_parent_id(t *testing.T) {
 	}
 }
 
+func Test_SynchronizeCategories(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	fileSystemNodes := make(map[string]*localFileStructure.FilesystemNode)
+
+	dbmock := NewMockCategoryProvider(mockCtrl)
+	dbmock.EXPECT().GetCategoriesToCreate().Times(1)
+
+	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
+	piwigoMock.EXPECT().GetAllCategories().Times(1)
+
+	err := SynchronizeCategories(fileSystemNodes, piwigoMock, dbmock)
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
 func createDbRootCategory() datastore.CategoryData {
 	parentCategory := datastore.CategoryData{
 		PiwigoId:       1,
