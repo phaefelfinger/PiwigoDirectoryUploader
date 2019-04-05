@@ -77,27 +77,27 @@ func updatePiwigoCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi, db dat
 		return err
 	}
 
-	for _, pwgcat := range categories {
-		dbcat, err := db.GetCategoryByPiwigoId(pwgcat.Id)
+	for _, pwgCat := range categories {
+		dbCat, err := db.GetCategoryByPiwigoId(pwgCat.Id)
 		if err == datastore.ErrorRecordNotFound {
-			logrus.Debugf("Adding category %s", pwgcat.Key)
-			dbcat = datastore.CategoryData{
-				PiwigoId: pwgcat.Id,
+			logrus.Debugf("Adding category %s", pwgCat.Key)
+			dbCat = datastore.CategoryData{
+				PiwigoId: pwgCat.Id,
 			}
 		} else if err != nil {
 			return err
 		}
 
-		if dbcat.Name == pwgcat.Name && dbcat.Key == pwgcat.Key && dbcat.PiwigoParentId == pwgcat.ParentId {
-			logrus.Debugf("No changes for category %s", dbcat.Key)
+		if dbCat.Name == pwgCat.Name && dbCat.Key == pwgCat.Key && dbCat.PiwigoParentId == pwgCat.ParentId {
+			logrus.Debugf("No changes for category %s", dbCat.Key)
 			continue
 		}
 
-		dbcat.Name = pwgcat.Name
-		dbcat.Key = pwgcat.Key
-		dbcat.PiwigoParentId = pwgcat.ParentId
+		dbCat.Name = pwgCat.Name
+		dbCat.Key = pwgCat.Key
+		dbCat.PiwigoParentId = pwgCat.ParentId
 
-		err = db.SaveCategory(dbcat)
+		err = db.SaveCategory(dbCat)
 		if err != nil {
 			return err
 		}
