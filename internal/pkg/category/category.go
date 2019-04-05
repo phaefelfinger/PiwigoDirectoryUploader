@@ -115,6 +115,11 @@ func createMissingCategories(piwigoApi piwigo.PiwigoCategoryApi, db datastore.Ca
 		return err
 	}
 
+	if len(missingCategories) == 0 {
+		logrus.Info("No categories missing on piwigo.")
+		return nil
+	}
+
 	logrus.Infof("Creating %d categories", len(missingCategories))
 
 	for _, category := range missingCategories {

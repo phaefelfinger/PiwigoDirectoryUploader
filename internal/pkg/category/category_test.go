@@ -51,13 +51,7 @@ func Test_updatePiwigoCategoriesFromServer_updates_a_category(t *testing.T) {
 		Name:           "oldName",
 	}
 
-	expectedCategory := datastore.CategoryData{
-		PiwigoId:       1,
-		PiwigoParentId: 0,
-		CategoryId:     1,
-		Name:           "2019",
-		Key:            "2019",
-	}
+	expectedCategory := createDbRootCategory()
 
 	dbmock := NewMockCategoryProvider(mockCtrl)
 	dbmock.EXPECT().GetCategoryByPiwigoId(1).Return(oldCategory, nil).Times(1)
@@ -74,11 +68,52 @@ func Test_updatePiwigoCategoriesFromServer_updates_a_category(t *testing.T) {
 	}
 }
 
+func Test_createMissingCategories_does_not_call_piwigo_if_there_is_no_category_missing(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	var categoriesToCreate []datastore.CategoryData
+
+	dbmock := NewMockCategoryProvider(mockCtrl)
+	dbmock.EXPECT().GetCategoriesToCreate().Return(categoriesToCreate, nil).Times(1)
+
+	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
+	piwigoMock.EXPECT().CreateCategory(gomock.Any(), gomock.Any()).Times(0)
+
+	err := createMissingCategories(piwigoMock, dbmock)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_createMissingCategories_calls_piwigo_api_and_saves_returned_id(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	expectedCategory := createDbRootCategory()
+	category := createDbRootCategory()
+	category.PiwigoId = 0
+
+	categoriesToCreate := []datastore.CategoryData{category}
+
+	dbmock := NewMockCategoryProvider(mockCtrl)
+	dbmock.EXPECT().GetCategoriesToCreate().Return(categoriesToCreate, nil).Times(1)
+	dbmock.EXPECT().SaveCategory(expectedCategory).Return(nil).Times(1)
+
+	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
+	piwigoMock.EXPECT().CreateCategory(0, category.Name).Return(1, nil).Times(1)
+
+	err := createMissingCategories(piwigoMock, dbmock)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func Test_getParentId_returns_0_for_root_nodes(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	category := crateDbRootCategory()
+	category := createDbRootCategory()
 
 	dbmock := NewMockCategoryProvider(mockCtrl)
 	dbmock.EXPECT().GetCategoryByKey(gomock.Any()).Times(0)
@@ -115,7 +150,7 @@ func Test_getParentId_returns_error_if_key_invalid(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	category := crateDbRootCategory()
+	category := createDbRootCategory()
 	category.Key = "."
 
 	dbmock := NewMockCategoryProvider(mockCtrl)
@@ -134,7 +169,7 @@ func Test_getParentId_finds_the_exptected_parent_id(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	parentCategory := crateDbRootCategory()
+	parentCategory := createDbRootCategory()
 	category := createDbSubCategory()
 
 	dbmock := NewMockCategoryProvider(mockCtrl)
@@ -150,7 +185,7 @@ func Test_getParentId_finds_the_exptected_parent_id(t *testing.T) {
 	}
 }
 
-func crateDbRootCategory() datastore.CategoryData {
+func createDbRootCategory() datastore.CategoryData {
 	parentCategory := datastore.CategoryData{
 		PiwigoId:       1,
 		PiwigoParentId: 0,
