@@ -145,17 +145,20 @@ func createMissingCategories(piwigoApi piwigo.PiwigoCategoryApi, db datastore.Ca
 }
 
 func getParentId(category datastore.CategoryData, db datastore.CategoryProvider) (int, error) {
+	if category.Key == "" || category.Key == "." {
+		msg := fmt.Sprintf("Category with id %d has a invalid value in the keyfield!", category.CategoryId)
+		logrus.Warnf(msg)
+		return 0, errors.New(msg)
+	}
+
 	parentKey := filepath.Dir(category.Key)
-	if category.Name == parentKey {
+	if category.Name == parentKey || parentKey == "." || parentKey == "" {
 		logrus.Debugf("The category %s is a root category, there is no parent", category.Name)
 		return 0, nil
 	}
 
 	logrus.Debugf("Looking up parent with key %s", parentKey)
 	parentCategory, err := db.GetCategoryByKey(parentKey)
-	if err == datastore.ErrorRecordNotFound {
-		return 0, err
-	}
 	if err != nil {
 		return 0, err
 	}
