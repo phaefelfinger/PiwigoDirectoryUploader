@@ -49,7 +49,7 @@ type CategoryProvider interface {
 	SaveCategory(category CategoryData) error
 	GetCategoryByPiwigoId(id int) (CategoryData, error)
 	GetCategoryByKey(key string) (CategoryData, error)
-	GetCategoriesToCreate()([]CategoryData, error)
+	GetCategoriesToCreate() ([]CategoryData, error)
 }
 
 type ImageMetadataProvider interface {
@@ -68,6 +68,22 @@ type LocalDataStore struct {
 
 func NewLocalDataStore() *LocalDataStore {
 	return &LocalDataStore{}
+}
+
+func (d *LocalDataStore) SaveCategory(category CategoryData) error {
+	panic("implement me")
+}
+
+func (d *LocalDataStore) GetCategoryByPiwigoId(id int) (CategoryData, error) {
+	panic("implement me")
+}
+
+func (d *LocalDataStore) GetCategoryByKey(key string) (CategoryData, error) {
+	panic("implement me")
+}
+
+func (d *LocalDataStore) GetCategoriesToCreate() ([]CategoryData, error) {
+	panic("implement me")
 }
 
 func (d *LocalDataStore) Initialize(connectionString string) error {
