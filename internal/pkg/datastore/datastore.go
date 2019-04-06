@@ -70,22 +70,6 @@ func NewLocalDataStore() *LocalDataStore {
 	return &LocalDataStore{}
 }
 
-func (d *LocalDataStore) SaveCategory(category CategoryData) error {
-	panic("implement me")
-}
-
-func (d *LocalDataStore) GetCategoryByPiwigoId(id int) (CategoryData, error) {
-	panic("implement me")
-}
-
-func (d *LocalDataStore) GetCategoryByKey(key string) (CategoryData, error) {
-	panic("implement me")
-}
-
-func (d *LocalDataStore) GetCategoriesToCreate() ([]CategoryData, error) {
-	panic("implement me")
-}
-
 func (d *LocalDataStore) Initialize(connectionString string) error {
 	if connectionString == "" {
 		return errors.New("connection string could not be empty.")
@@ -287,10 +271,6 @@ func (d *LocalDataStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId
 
 	_, err = stmt.Exec(piwigoId, uploadRequired, md5Sum)
 	if err != nil {
-		return err
-	}
-
-	if err != nil {
 		logrus.Errorf("Rolling back transaction for piwigo id update of file %s", md5Sum)
 		errTx := tx.Rollback()
 		if errTx != nil {
@@ -328,6 +308,22 @@ func (d *LocalDataStore) DeleteMarkedImages() error {
 
 	logrus.Tracef("Committing deleted images from database")
 	return tx.Commit()
+}
+
+func (d *LocalDataStore) SaveCategory(category CategoryData) error {
+	panic("implement me")
+}
+
+func (d *LocalDataStore) GetCategoryByPiwigoId(id int) (CategoryData, error) {
+	panic("implement me")
+}
+
+func (d *LocalDataStore) GetCategoryByKey(key string) (CategoryData, error) {
+	panic("implement me")
+}
+
+func (d *LocalDataStore) GetCategoriesToCreate() ([]CategoryData, error) {
+	panic("implement me")
 }
 
 func (d *LocalDataStore) insertImageMetaData(tx *sql.Tx, data ImageMetaData) error {
@@ -373,17 +369,28 @@ func (d *LocalDataStore) createTablesIfNeeded(db *sql.DB) error {
 	}
 
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS category (" +
-		"CategoryId INTEGER PRIMARY KEY," +
-		"PiwigoId INTEGER NULL," +
-		"PiwigoParentId INTEGER NULL," +
-		"Name NVARCHAR(255) NOT NULL," +
-		"Key NVARCHAR(1000) NOT NULL" +
+		"categoryId INTEGER PRIMARY KEY," +
+		"piwigoId INTEGER NULL," +
+		"piwigoParentId INTEGER NULL," +
+		"name NVARCHAR(255) NOT NULL," +
+		"key NVARCHAR(1000) NOT NULL" +
 		");")
 	if err != nil {
 		return err
 	}
 
-	return err
+	_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS UX_Category_Key ON category (key);")
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS UX_Category_PiwigoId ON category (piwigoId);")
+	if err != nil {
+		return err
+	}
+
+	logrus.Debug("Database successfully initialized")
+	return nil
 }
 
 func (d *LocalDataStore) updateImageMetaData(tx *sql.Tx, data ImageMetaData) error {
