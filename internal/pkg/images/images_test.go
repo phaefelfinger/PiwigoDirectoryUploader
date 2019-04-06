@@ -9,7 +9,6 @@ package images
 //go:generate mockgen -destination=./datastore_mock_test.go -package=images git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore ImageMetadataProvider,CategoryProvider
 
 import (
-	"errors"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo"
@@ -22,20 +21,19 @@ func Test_synchronize_local_image_metadata_should_find_nothing_if_empty(t *testi
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	category := datastore.CategoryData{CategoryId: 1, Name: "shooting1", PiwigoId: 1, Key: "2019/shooting1"}
 	categoryMock := NewMockCategoryProvider(mockCtrl)
 	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(0)
 
-	db := NewtestStore()
+	db := NewMockImageMetadataProvider(mockCtrl)
+	db.EXPECT().ImageMetadataAll().Times(1)
+	db.EXPECT().SaveImageMetadata(gomock.Any()).Times(0)
+
 	fileSystemNodes := map[string]*localFileStructure.FilesystemNode{}
 
 	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
-	}
-
-	if len(db.savedMetadata) > 0 {
-		t.Error("There were metadata records saved but non expected!")
 	}
 }
 
@@ -43,11 +41,9 @@ func Test_synchronize_local_image_metadata_should_add_new_metadata(t *testing.T)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	category := datastore.CategoryData{CategoryId: 1, Name: "shooting1", PiwigoId: 1, Key: "2019/shooting1"}
 	categoryMock := NewMockCategoryProvider(mockCtrl)
 	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(1)
-
-	db := NewtestStore()
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
 		Key:     "2019/shooting1/abc.jpg",
@@ -59,31 +55,19 @@ func Test_synchronize_local_image_metadata_should_add_new_metadata(t *testing.T)
 	fileSystemNodes := map[string]*localFileStructure.FilesystemNode{}
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
+	image := createImageMetaDataFromFilesystem(testFileSystemNode, 0, true, false)
+	image.CategoryId = category.PiwigoId
+	image.CategoryPath = category.Key
+
+	db := NewMockImageMetadataProvider(mockCtrl)
+	db.EXPECT().ImageMetadataAll().Times(1)
+	db.EXPECT().ImageMetadata(testFileSystemNode.Key).Return(datastore.ImageMetaData{}, datastore.ErrorRecordNotFound).Times(1)
+	db.EXPECT().SaveImageMetadata(image).Times(1)
+
 	// execute the sync metadata based on the file system results
 	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
-	}
-
-	// check if data are saved
-	savedData, exist := db.savedMetadata[testFileSystemNode.Key]
-	if !exist {
-		t.Fatal("Could not find correct metadata!")
-	}
-	if savedData.FullImagePath != testFileSystemNode.Key {
-		t.Errorf("fullImagePath %s on db image metadata is not set to %s!", savedData.FullImagePath, testFileSystemNode.Key)
-	}
-	if savedData.LastChange != testFileSystemNode.ModTime {
-		t.Error("lastChange on db image metadata is not set to the right date!")
-	}
-	if savedData.Filename != "abc.jpg" {
-		t.Error("filename on db image metadata is not set to abc.jpg!")
-	}
-	if savedData.Md5Sum != testFileSystemNode.Key {
-		t.Errorf("md5sum %s on db image metadata is not set to %s!", savedData.Md5Sum, testFileSystemNode.Key)
-	}
-	if savedData.UploadRequired != true {
-		t.Errorf("uploadRequired on db image metadata is not set to true!")
 	}
 }
 
@@ -91,20 +75,9 @@ func Test_synchronize_local_image_metadata_should_mark_unchanged_entries_without
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	category := datastore.CategoryData{CategoryId: 1, Name: "shooting1", PiwigoId: 1, Key: "2019/shooting1"}
 	categoryMock := NewMockCategoryProvider(mockCtrl)
 	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(0)
-
-	db := NewtestStore()
-	db.savedMetadata["2019/shooting1/abc.jpg"] = datastore.ImageMetaData{
-		Md5Sum:         "2019/shooting1/abc.jpg",
-		FullImagePath:  "2019/shooting1/abc.jpg",
-		PiwigoId:       0,
-		UploadRequired: false,
-		LastChange:     time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC),
-		Filename:       "abc.jpg",
-		DeleteRequired: true,
-	}
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
 		Key:     "2019/shooting1/abc.jpg",
@@ -116,25 +89,20 @@ func Test_synchronize_local_image_metadata_should_mark_unchanged_entries_without
 	fileSystemNodes := map[string]*localFileStructure.FilesystemNode{}
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
+	imageExptected := createImageMetaDataFromFilesystem(testFileSystemNode, 0, true, false)
+
+	imageStored := imageExptected
+	imageStored.DeleteRequired = true
+
+	db := NewMockImageMetadataProvider(mockCtrl)
+	db.EXPECT().ImageMetadataAll().Times(1)
+	db.EXPECT().ImageMetadata(testFileSystemNode.Key).Return(imageStored, nil).Times(1)
+	db.EXPECT().SaveImageMetadata(imageExptected).Times(1)
+
 	// execute the sync metadata based on the file system results
 	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
-	}
-
-	// check if data are saved
-	savedData, exist := db.savedMetadata[testFileSystemNode.Key]
-	if !exist {
-		t.Fatal("Could not find correct metadata!")
-	}
-	if savedData.LastChange != testFileSystemNode.ModTime {
-		t.Error("lastChange on db image metadata is not set to the right date!")
-	}
-	if savedData.UploadRequired != true {
-		t.Errorf("uploadRequired on db image metadata is not set to true!")
-	}
-	if savedData.DeleteRequired != false {
-		t.Errorf("deleteRequired on db image metadata is not set to false!")
 	}
 }
 
@@ -142,19 +110,9 @@ func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_upload
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	category := datastore.CategoryData{CategoryId: 1, Name: "shooting1", PiwigoId: 1, Key: "2019/shooting1"}
 	categoryMock := NewMockCategoryProvider(mockCtrl)
 	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(0)
-
-	db := NewtestStore()
-	db.savedMetadata["2019/shooting1/abc.jpg"] = datastore.ImageMetaData{
-		Md5Sum:         "2019/shooting1/abc.jpg",
-		FullImagePath:  "2019/shooting1/abc.jpg",
-		UploadRequired: false,
-		LastChange:     time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC),
-		Filename:       "abc.jpg",
-		DeleteRequired: true,
-	}
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
 		Key:     "2019/shooting1/abc.jpg",
@@ -166,25 +124,22 @@ func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_upload
 	fileSystemNodes := map[string]*localFileStructure.FilesystemNode{}
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
+	imageExptected := createImageMetaDataFromFilesystem(testFileSystemNode, 0, true, false)
+
+	imageStored := imageExptected
+	imageStored.DeleteRequired = true
+	imageStored.UploadRequired = false
+	imageStored.LastChange = time.Date(2019, 01, 01, 00, 0, 0, 0, time.UTC)
+
+	db := NewMockImageMetadataProvider(mockCtrl)
+	db.EXPECT().ImageMetadataAll().Times(1)
+	db.EXPECT().ImageMetadata(testFileSystemNode.Key).Return(imageStored, nil).Times(1)
+	db.EXPECT().SaveImageMetadata(imageExptected).Times(1)
+
 	// execute the sync metadata based on the file system results
 	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
-	}
-
-	// check if data are saved
-	savedData, exist := db.savedMetadata[testFileSystemNode.Key]
-	if !exist {
-		t.Fatal("Could not find correct metadata!")
-	}
-	if savedData.LastChange != testFileSystemNode.ModTime {
-		t.Error("lastChange on db image metadata is not set to the right date!")
-	}
-	if savedData.UploadRequired != true {
-		t.Errorf("uploadRequired on db image metadata is not set to true!")
-	}
-	if savedData.DeleteRequired != false {
-		t.Errorf("deleteRequired on db image metadata is not set to false!")
 	}
 }
 
@@ -192,20 +147,9 @@ func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_up
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	category := datastore.CategoryData{CategoryId: 1, Name: "shooting1", PiwigoId: 1, Key: "2019/shooting1"}
 	categoryMock := NewMockCategoryProvider(mockCtrl)
 	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(0)
-
-	db := NewtestStore()
-	db.savedMetadata["2019/shooting1/abc.jpg"] = datastore.ImageMetaData{
-		Md5Sum:         "2019/shooting1/abc.jpg",
-		FullImagePath:  "2019/shooting1/abc.jpg",
-		PiwigoId:       5,
-		UploadRequired: false,
-		LastChange:     time.Date(2019, 01, 01, 01, 0, 0, 0, time.UTC),
-		Filename:       "abc.jpg",
-		DeleteRequired: true,
-	}
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
 		Key:     "2019/shooting1/abc.jpg",
@@ -217,22 +161,22 @@ func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_up
 	fileSystemNodes := map[string]*localFileStructure.FilesystemNode{}
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
+	imageExptected := createImageMetaDataFromFilesystem(testFileSystemNode, 5, false, false)
+
+	imageStored := imageExptected
+	imageStored.DeleteRequired = true
+	imageStored.UploadRequired = false
+	imageStored.LastChange = time.Date(2019, 01, 01, 01, 0, 0, 0, time.UTC)
+
+	db := NewMockImageMetadataProvider(mockCtrl)
+	db.EXPECT().ImageMetadataAll().Times(1)
+	db.EXPECT().ImageMetadata(testFileSystemNode.Key).Return(imageStored, nil).Times(1)
+	db.EXPECT().SaveImageMetadata(imageExptected).Times(1)
+
 	// execute the sync metadata based on the file system results
 	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
-	}
-
-	// check if data are saved
-	savedData, exist := db.savedMetadata[testFileSystemNode.Key]
-	if !exist {
-		t.Fatal("Could not find correct metadata!")
-	}
-	if savedData.UploadRequired {
-		t.Errorf("uploadRequired on db image metadata is set to true, but should not be on unchanged items!")
-	}
-	if savedData.DeleteRequired != false {
-		t.Errorf("deleteRequired on db image metadata is not set to false!")
 	}
 }
 
@@ -240,11 +184,9 @@ func Test_synchronize_local_image_metadata_should_not_process_directories(t *tes
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	category := datastore.CategoryData{CategoryId: 1, Name: "shooting1", PiwigoId: 1, Key: "2019/shooting1"}
 	categoryMock := NewMockCategoryProvider(mockCtrl)
 	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(0)
-
-	db := NewtestStore()
 
 	testFileSystemNode := &localFileStructure.FilesystemNode{
 		Key:     "2019/shooting1",
@@ -256,14 +198,14 @@ func Test_synchronize_local_image_metadata_should_not_process_directories(t *tes
 	fileSystemNodes := map[string]*localFileStructure.FilesystemNode{}
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
+	db := NewMockImageMetadataProvider(mockCtrl)
+	db.EXPECT().ImageMetadataAll().Times(1)
+	db.EXPECT().SaveImageMetadata(gomock.Any()).Times(0)
+
 	// execute the sync metadata based on the file system results
 	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
-	}
-
-	if len(db.savedMetadata) > 0 {
-		t.Error("There were metadata records saved but non expected!")
 	}
 }
 
@@ -587,49 +529,6 @@ func Test_deleteImages_should_not_call_anything_if_no_images_are_marked_for_dele
 	}
 }
 
-// test metadata store to store save the metadat and simulate the database
-//TODO: refactor to use generated test implementation
-type testStore struct {
-	savedMetadata map[string]datastore.ImageMetaData
-}
-
-func NewtestStore() *testStore {
-	return &testStore{savedMetadata: make(map[string]datastore.ImageMetaData)}
-}
-
-func (s *testStore) ImageMetadata(fullImagePath string) (datastore.ImageMetaData, error) {
-	metadata, exist := s.savedMetadata[fullImagePath]
-	if !exist {
-		return datastore.ImageMetaData{}, datastore.ErrorRecordNotFound
-	}
-	return metadata, nil
-}
-
-func (d *testStore) ImageMetadataAll() ([]datastore.ImageMetaData, error) {
-	return []datastore.ImageMetaData{}, nil
-}
-
-func (s *testStore) SaveImageMetadata(m datastore.ImageMetaData) error {
-	s.savedMetadata[m.FullImagePath] = m
-	return nil
-}
-
-func (d *testStore) ImageMetadataToUpload() ([]datastore.ImageMetaData, error) {
-	return nil, errors.New("N/A")
-}
-
-func (d *testStore) ImageMetadataToDelete() ([]datastore.ImageMetaData, error) {
-	return nil, errors.New("N/A")
-}
-
-func (d *testStore) SavePiwigoIdAndUpdateUploadFlag(md5Sum string, piwigoId int) error {
-	return errors.New("N/A")
-}
-
-func (d *testStore) DeleteMarkedImages() error {
-	return errors.New("N/A")
-}
-
 // to make the sync testable, we pass in a simple mock that returns the filepath as checksum
 func testChecksumCalculator(file string) (string, error) {
 	return file, nil
@@ -645,4 +544,17 @@ func createTestImageMetaData(piwigoId int) datastore.ImageMetaData {
 		CategoryId:     2,
 	}
 	return img
+}
+
+func createImageMetaDataFromFilesystem(testFileSystemNode *localFileStructure.FilesystemNode, piwigoId int, uploadRequired bool, deleteRequired bool) datastore.ImageMetaData {
+	imageExptected := datastore.ImageMetaData{
+		Md5Sum:         testFileSystemNode.Key,
+		FullImagePath:  testFileSystemNode.Key,
+		PiwigoId:       piwigoId,
+		UploadRequired: uploadRequired,
+		LastChange:     testFileSystemNode.ModTime,
+		Filename:       testFileSystemNode.Name,
+		DeleteRequired: deleteRequired,
+	}
+	return imageExptected
 }
