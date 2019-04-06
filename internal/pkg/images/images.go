@@ -22,25 +22,25 @@ type fileChecksumCalculator func(filePath string) (string, error)
 
 // Update the local image metadata by walking through all found files and check if the modification date has changed
 // or if they are new to the local database. If the files is new or changed, the md5sum will be rebuilt as well.
-func SynchronizeLocalImageMetadata(metadataStorage datastore.ImageMetadataProvider, fileSystemNodes map[string]*localFileStructure.FilesystemNode, categories map[string]*piwigo.PiwigoCategory, checksumCalculator fileChecksumCalculator) error {
+func SynchronizeLocalImageMetadata(imageDb datastore.ImageMetadataProvider, categoryDb datastore.CategoryProvider, fileSystemNodes map[string]*localFileStructure.FilesystemNode, checksumCalculator fileChecksumCalculator) error {
 	logrus.Debug("Starting SynchronizeLocalImageMetadata")
 	defer logrus.Debug("Leaving SynchronizeLocalImageMetadata")
 
 	logrus.Info("Synchronizing local image metadata database with local available images")
 
-	err := synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes, metadataStorage, categories, checksumCalculator)
+	err := synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes, imageDb, categoryDb, checksumCalculator)
 	if err != nil {
 		return err
 	}
 
-	err = synchronizeLocalImageMetadataFindFilesToDelete(metadataStorage)
+	err = synchronizeLocalImageMetadataFindFilesToDelete(imageDb)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*localFileStructure.FilesystemNode, metadataStorage datastore.ImageMetadataProvider, categories map[string]*piwigo.PiwigoCategory, checksumCalculator fileChecksumCalculator) error {
+func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*localFileStructure.FilesystemNode, imageDb datastore.ImageMetadataProvider, categoryDb datastore.CategoryProvider, checksumCalculator fileChecksumCalculator) error {
 	logrus.Debug("Entering synchronizeLocalImageMetadataScanNewFiles")
 	defer logrus.Debug("Leaving synchronizeLocalImageMetadataScanNewFiles")
 
@@ -50,7 +50,7 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 			continue
 		}
 
-		metadata, err := metadataStorage.ImageMetadata(file.Path)
+		metadata, err := imageDb.ImageMetadata(file.Path)
 		if err == datastore.ErrorRecordNotFound {
 			logrus.Debugf("Creating new metadata entry for %s.", file.Path)
 			metadata = datastore.ImageMetaData{}
@@ -58,11 +58,11 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 			metadata.FullImagePath = file.Path
 			metadata.CategoryPath = filepath.Dir(file.Key)
 
-			category, exist := categories[metadata.CategoryPath]
-			if exist {
-				metadata.CategoryId = category.Id
+			category, err := categoryDb.GetCategoryByKey(metadata.CategoryPath)
+			if err == nil {
+				metadata.CategoryId = category.PiwigoId
 			} else {
-				logrus.Warnf("No category found for image %s", file.Path)
+				logrus.Warnf("No category found for image %s - %s", file.Path, err)
 			}
 
 		} else if err != nil {
@@ -84,7 +84,7 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 			continue
 		}
 
-		err = metadataStorage.SaveImageMetadata(metadata)
+		err = imageDb.SaveImageMetadata(metadata)
 		if err != nil {
 			return err
 		}
@@ -92,11 +92,11 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 	return nil
 }
 
-func synchronizeLocalImageMetadataFindFilesToDelete(provider datastore.ImageMetadataProvider) error {
+func synchronizeLocalImageMetadataFindFilesToDelete(imageDb datastore.ImageMetadataProvider) error {
 	logrus.Debug("Entering SynchronizeLocalImageMetadataFindFilesToDelete")
 	defer logrus.Debug("Leaving SynchronizeLocalImageMetadataFindFilesToDelete")
 
-	images, err := provider.ImageMetadataAll()
+	images, err := imageDb.ImageMetadataAll()
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func synchronizeLocalImageMetadataFindFilesToDelete(provider datastore.ImageMeta
 		if _, err := os.Stat(img.FullImagePath); os.IsNotExist(err) {
 			img.UploadRequired = false
 			img.DeleteRequired = true
-			err := provider.SaveImageMetadata(img)
+			err := imageDb.SaveImageMetadata(img)
 			if err != nil {
 				return err
 			}

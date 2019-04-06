@@ -6,7 +6,7 @@
 package images
 
 //go:generate mockgen -destination=./piwigo_mock_test.go -package=images git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoApi,PiwigoCategoryApi,PiwigoImageApi
-//go:generate mockgen -destination=./datastore_mock_test.go -package=images git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore ImageMetadataProvider
+//go:generate mockgen -destination=./datastore_mock_test.go -package=images git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore ImageMetadataProvider,CategoryProvider
 
 import (
 	"errors"
@@ -19,13 +19,17 @@ import (
 )
 
 func Test_synchronize_local_image_metadata_should_find_nothing_if_empty(t *testing.T) {
-	categories := make(map[string]*piwigo.PiwigoCategory)
-	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	categoryMock := NewMockCategoryProvider(mockCtrl)
+	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(0)
 
 	db := NewtestStore()
 	fileSystemNodes := map[string]*localFileStructure.FilesystemNode{}
 
-	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -36,9 +40,12 @@ func Test_synchronize_local_image_metadata_should_find_nothing_if_empty(t *testi
 }
 
 func Test_synchronize_local_image_metadata_should_add_new_metadata(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 
-	categories := make(map[string]*piwigo.PiwigoCategory)
-	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	categoryMock := NewMockCategoryProvider(mockCtrl)
+	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(1)
 
 	db := NewtestStore()
 
@@ -53,7 +60,7 @@ func Test_synchronize_local_image_metadata_should_add_new_metadata(t *testing.T)
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -81,9 +88,12 @@ func Test_synchronize_local_image_metadata_should_add_new_metadata(t *testing.T)
 }
 
 func Test_synchronize_local_image_metadata_should_mark_unchanged_entries_without_piwigoid_as_uploads_and_reset_deleted(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 
-	categories := make(map[string]*piwigo.PiwigoCategory)
-	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	categoryMock := NewMockCategoryProvider(mockCtrl)
+	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(0)
 
 	db := NewtestStore()
 	db.savedMetadata["2019/shooting1/abc.jpg"] = datastore.ImageMetaData{
@@ -107,7 +117,7 @@ func Test_synchronize_local_image_metadata_should_mark_unchanged_entries_without
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -129,9 +139,12 @@ func Test_synchronize_local_image_metadata_should_mark_unchanged_entries_without
 }
 
 func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_uploads_and_reset_deleted(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 
-	categories := make(map[string]*piwigo.PiwigoCategory)
-	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	categoryMock := NewMockCategoryProvider(mockCtrl)
+	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(0)
 
 	db := NewtestStore()
 	db.savedMetadata["2019/shooting1/abc.jpg"] = datastore.ImageMetaData{
@@ -154,7 +167,7 @@ func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_upload
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -176,11 +189,14 @@ func Test_synchronize_local_image_metadata_should_mark_changed_entries_as_upload
 }
 
 func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_upload_and_reset_deleted(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	categoryMock := NewMockCategoryProvider(mockCtrl)
+	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(0)
+
 	db := NewtestStore()
-
-	categories := make(map[string]*piwigo.PiwigoCategory)
-	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
-
 	db.savedMetadata["2019/shooting1/abc.jpg"] = datastore.ImageMetaData{
 		Md5Sum:         "2019/shooting1/abc.jpg",
 		FullImagePath:  "2019/shooting1/abc.jpg",
@@ -202,7 +218,7 @@ func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_up
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
@@ -221,8 +237,12 @@ func Test_synchronize_local_image_metadata_should_not_mark_unchanged_files_to_up
 }
 
 func Test_synchronize_local_image_metadata_should_not_process_directories(t *testing.T) {
-	categories := make(map[string]*piwigo.PiwigoCategory)
-	categories["2019/shooting1"] = &piwigo.PiwigoCategory{Id: 1}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	category := datastore.CategoryData{CategoryId:1, Name:"shooting1", PiwigoId: 1, Key: "2019/shooting1"}
+	categoryMock := NewMockCategoryProvider(mockCtrl)
+	categoryMock.EXPECT().GetCategoryByKey(category.Key).Return(category, nil).Times(0)
 
 	db := NewtestStore()
 
@@ -237,7 +257,7 @@ func Test_synchronize_local_image_metadata_should_not_process_directories(t *tes
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	// execute the sync metadata based on the file system results
-	err := SynchronizeLocalImageMetadata(db, fileSystemNodes, categories, testChecksumCalculator)
+	err := SynchronizeLocalImageMetadata(db, categoryMock, fileSystemNodes, testChecksumCalculator)
 	if err != nil {
 		t.Error(err)
 	}
