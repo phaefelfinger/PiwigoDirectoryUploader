@@ -29,20 +29,20 @@ func (cat *CategoryData) String() string {
 }
 
 type ImageMetaData struct {
-	ImageId        int
-	PiwigoId       int
-	FullImagePath  string
-	Filename       string
-	Md5Sum         string
-	LastChange     time.Time
-	CategoryPath   string
-	CategoryId     int
-	UploadRequired bool
-	DeleteRequired bool
+	ImageId          int
+	PiwigoId         int
+	FullImagePath    string
+	Filename         string
+	Md5Sum           string
+	LastChange       time.Time
+	CategoryPath     string
+	CategoryPiwigoId int
+	UploadRequired   bool
+	DeleteRequired   bool
 }
 
 func (img *ImageMetaData) String() string {
-	return fmt.Sprintf("ImageMetaData{ImageId:%d, PiwigoId:%d, CategoryId:%d, RelPath:%s, File:%s, Md5:%s, Change:%sS, catpath:%s, UploadRequired: %t, DeleteRequired: %t}", img.ImageId, img.PiwigoId, img.CategoryId, img.FullImagePath, img.Filename, img.Md5Sum, img.LastChange.String(), img.CategoryPath, img.UploadRequired, img.DeleteRequired)
+	return fmt.Sprintf("ImageMetaData{ImageId:%d, PiwigoId:%d, CategoryPiwigoId:%d, RelPath:%s, File:%s, Md5:%s, Change:%sS, catpath:%s, UploadRequired: %t, DeleteRequired: %t}", img.ImageId, img.PiwigoId, img.CategoryPiwigoId, img.FullImagePath, img.Filename, img.Md5Sum, img.LastChange.String(), img.CategoryPath, img.UploadRequired, img.DeleteRequired)
 }
 
 type CategoryProvider interface {
@@ -114,7 +114,7 @@ func (d *LocalDataStore) ImageMetadata(fullImagePath string) (ImageMetaData, err
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired, deleteRequired FROM image WHERE fullImagePath = ?")
+	stmt, err := db.Prepare("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryPiwigoId, uploadRequired, deleteRequired FROM image WHERE fullImagePath = ?")
 	if err != nil {
 		return img, err
 	}
@@ -147,7 +147,7 @@ func (d *LocalDataStore) ImageMetadataAll() ([]ImageMetaData, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired, deleteRequired FROM image")
+	rows, err := db.Query("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryPiwigoId, uploadRequired, deleteRequired FROM image")
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (d *LocalDataStore) ImageMetadataToDelete() ([]ImageMetaData, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired, deleteRequired FROM image WHERE deleteRequired = 1")
+	rows, err := db.Query("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryPiwigoId, uploadRequired, deleteRequired FROM image WHERE deleteRequired = 1")
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func (d *LocalDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired, deleteRequired FROM image WHERE uploadRequired = 1 and deleteRequired = 0 order by fullImagePath asc")
+	rows, err := db.Query("SELECT imageId, piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryPiwigoId, uploadRequired, deleteRequired FROM image WHERE uploadRequired = 1 and deleteRequired = 0 order by fullImagePath asc")
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (d *LocalDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 }
 
 func ReadImageMetadataFromRow(rows *sql.Rows, img *ImageMetaData) error {
-	err := rows.Scan(&img.ImageId, &img.PiwigoId, &img.FullImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryId, &img.UploadRequired, &img.DeleteRequired)
+	err := rows.Scan(&img.ImageId, &img.PiwigoId, &img.FullImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryPiwigoId, &img.UploadRequired, &img.DeleteRequired)
 	return err
 }
 
@@ -331,11 +331,11 @@ func (d *LocalDataStore) DeleteMarkedImages() error {
 }
 
 func (d *LocalDataStore) insertImageMetaData(tx *sql.Tx, data ImageMetaData) error {
-	stmt, err := tx.Prepare("INSERT INTO image (piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryId, uploadRequired, deleteRequired) VALUES (?,?,?,?,?,?,?,?,?)")
+	stmt, err := tx.Prepare("INSERT INTO image (piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryPiwigoId, uploadRequired, deleteRequired) VALUES (?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(data.PiwigoId, data.FullImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId, data.UploadRequired, data.DeleteRequired)
+	_, err = stmt.Exec(data.PiwigoId, data.FullImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryPiwigoId, data.UploadRequired, data.DeleteRequired)
 	return err
 }
 
@@ -359,7 +359,7 @@ func (d *LocalDataStore) createTablesIfNeeded(db *sql.DB) error {
 		"md5sum NVARCHAR(50) NOT NULL," +
 		"lastChanged DATETIME NOT NULL," +
 		"categoryPath NVARCHAR(1000) NOT NULL," +
-		"categoryId INTEGER NULL," +
+		"categoryPiwigoId INTEGER NULL," +
 		"uploadRequired BIT NOT NULL," +
 		"deleteRequired BIT NOT NULL" +
 		");")
@@ -368,14 +368,29 @@ func (d *LocalDataStore) createTablesIfNeeded(db *sql.DB) error {
 	}
 
 	_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS UX_ImageFullImagePath ON image (fullImagePath);")
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS category (" +
+		"CategoryId INTEGER PRIMARY KEY," +
+		"PiwigoId INTEGER NULL," +
+		"PiwigoParentId INTEGER NULL," +
+		"Name NVARCHAR(255) NOT NULL," +
+		"Key NVARCHAR(1000) NOT NULL" +
+		");")
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 
 func (d *LocalDataStore) updateImageMetaData(tx *sql.Tx, data ImageMetaData) error {
-	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ?, fullImagePath = ?, fileName = ?, md5sum = ?, lastChanged = ?, categoryPath = ?, categoryId = ?, uploadRequired = ?, deleteRequired = ? WHERE imageId = ?")
+	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ?, fullImagePath = ?, fileName = ?, md5sum = ?, lastChanged = ?, categoryPath = ?, categoryPiwigoId = ?, uploadRequired = ?, deleteRequired = ? WHERE imageId = ?")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(data.PiwigoId, data.FullImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryId, data.UploadRequired, data.DeleteRequired, data.ImageId)
+	_, err = stmt.Exec(data.PiwigoId, data.FullImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryPiwigoId, data.UploadRequired, data.DeleteRequired, data.ImageId)
 	return err
 }

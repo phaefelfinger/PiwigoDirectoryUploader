@@ -56,7 +56,7 @@ func Test_synchronize_local_image_metadata_should_add_new_metadata(t *testing.T)
 	fileSystemNodes[testFileSystemNode.Key] = testFileSystemNode
 
 	image := createImageMetaDataFromFilesystem(testFileSystemNode, 0, true, false)
-	image.CategoryId = category.PiwigoId
+	image.CategoryPiwigoId = category.PiwigoId
 	image.CategoryPath = category.Key
 
 	db := NewMockImageMetadataProvider(mockCtrl)
@@ -536,12 +536,12 @@ func testChecksumCalculator(file string) (string, error) {
 
 func createTestImageMetaData(piwigoId int) datastore.ImageMetaData {
 	img := datastore.ImageMetaData{
-		ImageId:        1,
-		PiwigoId:       piwigoId,
-		FullImagePath:  "/nonexisting/file.jpg",
-		UploadRequired: true,
-		Md5Sum:         "1234",
-		CategoryId:     2,
+		ImageId:          1,
+		PiwigoId:         piwigoId,
+		FullImagePath:    "/nonexisting/file.jpg",
+		UploadRequired:   true,
+		Md5Sum:           "1234",
+		CategoryPiwigoId: 2,
 	}
 	return img
 }

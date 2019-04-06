@@ -60,7 +60,7 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 
 			category, err := categoryDb.GetCategoryByKey(metadata.CategoryPath)
 			if err == nil {
-				metadata.CategoryId = category.PiwigoId
+				metadata.CategoryPiwigoId = category.PiwigoId
 			} else {
 				logrus.Warnf("No category found for image %s - %s", file.Path, err)
 			}
@@ -129,7 +129,7 @@ func UploadImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.Im
 
 	for _, img := range images {
 
-		imgId, err := piwigoCtx.UploadImage(img.PiwigoId, img.FullImagePath, img.Md5Sum, img.CategoryId)
+		imgId, err := piwigoCtx.UploadImage(img.PiwigoId, img.FullImagePath, img.Md5Sum, img.CategoryPiwigoId)
 		if err != nil {
 			logrus.Warnf("could not upload image %s. Continuing with the next image.", img.FullImagePath)
 			continue

@@ -312,14 +312,14 @@ func EnsureMetadataAreEqual(action string, img ImageMetaData, imgLoad ImageMetaD
 
 func getExampleImageMetadata(filePath string) ImageMetaData {
 	return ImageMetaData{
-		FullImagePath:  filePath,
-		PiwigoId:       1,
-		Md5Sum:         "aabbccddeeff",
-		LastChange:     time.Now().UTC(),
-		Filename:       "bar.jpg",
-		CategoryPath:   "blah/foo",
-		CategoryId:     100,
-		UploadRequired: true,
+		FullImagePath:    filePath,
+		PiwigoId:         1,
+		Md5Sum:           "aabbccddeeff",
+		LastChange:       time.Now().UTC(),
+		Filename:         "bar.jpg",
+		CategoryPath:     "blah/foo",
+		CategoryPiwigoId: 100,
+		UploadRequired:   true,
 	}
 }
 
