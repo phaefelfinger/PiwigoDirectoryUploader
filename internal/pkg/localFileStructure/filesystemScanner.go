@@ -44,6 +44,11 @@ func ScanLocalFileStructure(path string) (map[string]*FilesystemNode, error) {
 			return nil
 		}
 
+		if strings.HasPrefix(info.Name(), ".") {
+			logrus.Tracef("Skipping hidden file or directory %s", path)
+			return nil
+		}
+
 		extension := strings.ToLower(filepath.Ext(path))
 		if extension != ".jpg" && extension != ".png" && !info.IsDir() {
 			return nil
