@@ -34,14 +34,14 @@ func Test_save_and_load_metadata(t *testing.T) {
 	img.ImageId = 1
 
 	imgLoad := loadMetadataShouldNotFail("insert", dataStore, filePath, t)
-	EnsureMetadataAreEqual("insert", img, imgLoad, t)
+	ensureMetadataAreEqual("insert", img, imgLoad, t)
 
 	// updated the image again
 	img.Md5Sum = "123456"
 	saveImageShouldNotFail("update", dataStore, img, t)
 
 	imgLoad = loadMetadataShouldNotFail("update", dataStore, filePath, t)
-	EnsureMetadataAreEqual("update", img, imgLoad, t)
+	ensureMetadataAreEqual("update", img, imgLoad, t)
 }
 
 func Test_save_and_query_for_all_entries(t *testing.T) {
@@ -72,7 +72,7 @@ func Test_save_and_query_for_all_entries(t *testing.T) {
 	}
 
 	imgLoad := images[0]
-	EnsureMetadataAreEqual("allimages", img1, imgLoad, t)
+	ensureMetadataAreEqual("allimages", img1, imgLoad, t)
 }
 
 func Test_save_and_query_for_upload_records(t *testing.T) {
@@ -97,7 +97,7 @@ func Test_save_and_query_for_upload_records(t *testing.T) {
 	}
 
 	imgLoad := images[0]
-	EnsureMetadataAreEqual("toupload", img, imgLoad, t)
+	ensureMetadataAreEqual("toupload", img, imgLoad, t)
 
 }
 
@@ -133,7 +133,7 @@ func Test_save_and_query_for_upload_records_do_not_contain_images_to_delete(t *t
 	}
 
 	imgLoad := images[0]
-	EnsureMetadataAreEqual("toupload", img1, imgLoad, t)
+	ensureMetadataAreEqual("toupload", img1, imgLoad, t)
 }
 
 func Test_save_and_query_for_deleted_records_do_contain_images(t *testing.T) {
@@ -164,7 +164,7 @@ func Test_save_and_query_for_deleted_records_do_contain_images(t *testing.T) {
 	}
 
 	imgLoad := images[0]
-	EnsureMetadataAreEqual("todelete", img1, imgLoad, t)
+	ensureMetadataAreEqual("todelete", img1, imgLoad, t)
 }
 
 func Test_load_metadata_not_found(t *testing.T) {
@@ -228,7 +228,7 @@ func Test_update_piwigoId_by_checksum(t *testing.T) {
 	}
 
 	imgLoad := loadMetadataShouldNotFail("update", dataStore, filePath, t)
-	EnsureMetadataAreEqual("SavePiwigoIdAndUpdateUploadFlag", img, imgLoad, t)
+	ensureMetadataAreEqual("SavePiwigoIdAndUpdateUploadFlag", img, imgLoad, t)
 }
 
 func Test_update_piwigoId_by_checksum_found_no_image(t *testing.T) {
@@ -252,7 +252,7 @@ func Test_update_piwigoId_by_checksum_found_no_image(t *testing.T) {
 	}
 
 	imgLoad := loadMetadataShouldNotFail("update", dataStore, filePath, t)
-	EnsureMetadataAreEqual("SavePiwigoIdAndUpdateUploadFlag", img, imgLoad, t)
+	ensureMetadataAreEqual("SavePiwigoIdAndUpdateUploadFlag", img, imgLoad, t)
 }
 
 func Test_deleteMarkedImages_should_remove_records(t *testing.T) {
@@ -280,7 +280,7 @@ func Test_deleteMarkedImages_should_remove_records(t *testing.T) {
 
 	images, err := dataStore.ImageMetadataAll()
 	if err != nil {
-		t.Fatalf("Could not query images to upload! %s", err)
+		t.Fatalf("Could not query images! %s", err)
 	}
 
 	if len(images) != 1 {
@@ -288,10 +288,35 @@ func Test_deleteMarkedImages_should_remove_records(t *testing.T) {
 	}
 }
 
+func Test_saveCategory_should_store_records(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
+
+	category := getExampleCategoryData("2019")
+
+	saveCategoryShouldNotFail("addcategory", dataStore, category, t)
+	category.CategoryId = 1
+
+	_, err := dataStore.GetCategoryByKey(category.Key)
+	if err != nil {
+		t.Fatalf("Could not query category! %s", err)
+	}
+}
+
 func saveImageShouldNotFail(action string, dataStore *LocalDataStore, img ImageMetaData, t *testing.T) {
 	err := dataStore.SaveImageMetadata(img)
 	if err != nil {
 		t.Errorf("%s: Could not save Metadata: %s", action, err)
+	}
+}
+
+func saveCategoryShouldNotFail(action string, dataStore *LocalDataStore, cat CategoryData, t *testing.T) {
+	err := dataStore.SaveCategory(cat)
+	if err != nil {
+		t.Errorf("%s: Could not save category: %s", action, err)
 	}
 }
 
@@ -303,10 +328,20 @@ func loadMetadataShouldNotFail(action string, dataStore *LocalDataStore, filePat
 	return imgLoad
 }
 
-func EnsureMetadataAreEqual(action string, img ImageMetaData, imgLoad ImageMetaData, t *testing.T) {
+func ensureMetadataAreEqual(action string, img ImageMetaData, imgLoad ImageMetaData, t *testing.T) {
 	// check if both instances serialize to the same string representation
 	if img.String() != imgLoad.String() {
 		t.Errorf("%s: Invalid image loaded! expected (ignore ImageId) %s but got %s", action, img.String(), imgLoad.String())
+	}
+}
+
+func getExampleCategoryData(key string) CategoryData {
+	return CategoryData{
+		CategoryId:     0,
+		PiwigoId:       1,
+		Key:            key,
+		Name:           key,
+		PiwigoParentId: 0,
 	}
 }
 

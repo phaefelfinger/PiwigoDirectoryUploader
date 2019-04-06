@@ -110,7 +110,7 @@ func (d *LocalDataStore) ImageMetadata(fullImagePath string) (ImageMetaData, err
 	defer rows.Close()
 
 	if rows.Next() {
-		err = ReadImageMetadataFromRow(rows, &img)
+		err = readImageMetadataFromRow(rows, &img)
 		if err != nil {
 			return img, err
 		}
@@ -140,7 +140,7 @@ func (d *LocalDataStore) ImageMetadataAll() ([]ImageMetaData, error) {
 	images := []ImageMetaData{}
 	for rows.Next() {
 		img := &ImageMetaData{}
-		err = ReadImageMetadataFromRow(rows, img)
+		err = readImageMetadataFromRow(rows, img)
 		if err != nil {
 			return nil, err
 		}
@@ -169,7 +169,7 @@ func (d *LocalDataStore) ImageMetadataToDelete() ([]ImageMetaData, error) {
 	images := []ImageMetaData{}
 	for rows.Next() {
 		img := &ImageMetaData{}
-		err = ReadImageMetadataFromRow(rows, img)
+		err = readImageMetadataFromRow(rows, img)
 		if err != nil {
 			return nil, err
 		}
@@ -198,7 +198,7 @@ func (d *LocalDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 	images := []ImageMetaData{}
 	for rows.Next() {
 		img := &ImageMetaData{}
-		err = ReadImageMetadataFromRow(rows, img)
+		err = readImageMetadataFromRow(rows, img)
 		if err != nil {
 			return nil, err
 		}
@@ -207,11 +207,6 @@ func (d *LocalDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 	err = rows.Err()
 
 	return images, err
-}
-
-func ReadImageMetadataFromRow(rows *sql.Rows, img *ImageMetaData) error {
-	err := rows.Scan(&img.ImageId, &img.PiwigoId, &img.FullImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryPiwigoId, &img.UploadRequired, &img.DeleteRequired)
-	return err
 }
 
 func (d *LocalDataStore) SaveImageMetadata(img ImageMetaData) error {
@@ -311,7 +306,35 @@ func (d *LocalDataStore) DeleteMarkedImages() error {
 }
 
 func (d *LocalDataStore) SaveCategory(category CategoryData) error {
-	panic("implement me")
+	logrus.Tracef("Saving category: %s", category.String())
+	db, err := d.openDatabase()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	if category.CategoryId <= 0 {
+		err = d.insertCategoryData(tx, category)
+	} else {
+		err = d.updateCategoryData(tx, category)
+	}
+
+	if err != nil {
+		logrus.Errorf("Rolling back transaction for category of %s", category.Key)
+		errTx := tx.Rollback()
+		if errTx != nil {
+			logrus.Errorf("Rollback of transaction for category of %s failed!", category.Key)
+		}
+		return err
+	}
+
+	logrus.Tracef("Committing category for image %s", category.String())
+	return tx.Commit()
 }
 
 func (d *LocalDataStore) GetCategoryByPiwigoId(id int) (CategoryData, error) {
@@ -319,20 +342,41 @@ func (d *LocalDataStore) GetCategoryByPiwigoId(id int) (CategoryData, error) {
 }
 
 func (d *LocalDataStore) GetCategoryByKey(key string) (CategoryData, error) {
-	panic("implement me")
+	logrus.Tracef("Query category %s", key)
+	cat := CategoryData{}
+
+	db, err := d.openDatabase()
+	if err != nil {
+		return cat, err
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("SELECT categoryId, piwigoId, piwigoParentId, name, key FROM category WHERE key = ?")
+	if err != nil {
+		return cat, err
+	}
+
+	rows, err := stmt.Query(key)
+	if err != nil {
+		return cat, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err = readCategoryFromRow(rows, &cat)
+		if err != nil {
+			return cat, err
+		}
+	} else {
+		return cat, ErrorRecordNotFound
+	}
+	err = rows.Err()
+
+	return cat, err
 }
 
 func (d *LocalDataStore) GetCategoriesToCreate() ([]CategoryData, error) {
 	panic("implement me")
-}
-
-func (d *LocalDataStore) insertImageMetaData(tx *sql.Tx, data ImageMetaData) error {
-	stmt, err := tx.Prepare("INSERT INTO image (piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryPiwigoId, uploadRequired, deleteRequired) VALUES (?,?,?,?,?,?,?,?,?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(data.PiwigoId, data.FullImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryPiwigoId, data.UploadRequired, data.DeleteRequired)
-	return err
 }
 
 func (d *LocalDataStore) openDatabase() (*sql.DB, error) {
@@ -393,11 +437,48 @@ func (d *LocalDataStore) createTablesIfNeeded(db *sql.DB) error {
 	return nil
 }
 
+func readImageMetadataFromRow(rows *sql.Rows, img *ImageMetaData) error {
+	err := rows.Scan(&img.ImageId, &img.PiwigoId, &img.FullImagePath, &img.Filename, &img.Md5Sum, &img.LastChange, &img.CategoryPath, &img.CategoryPiwigoId, &img.UploadRequired, &img.DeleteRequired)
+	return err
+}
+
+func (d *LocalDataStore) insertImageMetaData(tx *sql.Tx, data ImageMetaData) error {
+	stmt, err := tx.Prepare("INSERT INTO image (piwigoId, fullImagePath, fileName, md5sum, lastChanged, categoryPath, categoryPiwigoId, uploadRequired, deleteRequired) VALUES (?,?,?,?,?,?,?,?,?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(data.PiwigoId, data.FullImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryPiwigoId, data.UploadRequired, data.DeleteRequired)
+	return err
+}
+
 func (d *LocalDataStore) updateImageMetaData(tx *sql.Tx, data ImageMetaData) error {
 	stmt, err := tx.Prepare("UPDATE image SET piwigoId = ?, fullImagePath = ?, fileName = ?, md5sum = ?, lastChanged = ?, categoryPath = ?, categoryPiwigoId = ?, uploadRequired = ?, deleteRequired = ? WHERE imageId = ?")
 	if err != nil {
 		return err
 	}
 	_, err = stmt.Exec(data.PiwigoId, data.FullImagePath, data.Filename, data.Md5Sum, data.LastChange, data.CategoryPath, data.CategoryPiwigoId, data.UploadRequired, data.DeleteRequired, data.ImageId)
+	return err
+}
+
+func readCategoryFromRow(rows *sql.Rows, cat *CategoryData) error {
+	err := rows.Scan(&cat.CategoryId, &cat.PiwigoId, &cat.PiwigoParentId, &cat.Name, &cat.Key)
+	return err
+}
+
+func (d *LocalDataStore) updateCategoryData(tx *sql.Tx, data CategoryData) error {
+	stmt, err := tx.Prepare("UPDATE category SET piwigoId = ?, piwigoParentId = ?, name = ?, key = ? WHERE categoryId = ?")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(data.PiwigoId, data.PiwigoParentId, data.Name, data.Key, data.CategoryId)
+	return err
+}
+
+func (d *LocalDataStore) insertCategoryData(tx *sql.Tx, data CategoryData) error {
+	stmt, err := tx.Prepare("INSERT INTO category (piwigoId, piwigoParentId, name, key) VALUES (?,?,?,?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(data.PiwigoId, data.PiwigoParentId, data.Name, data.Key)
 	return err
 }
