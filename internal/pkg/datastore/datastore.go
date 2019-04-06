@@ -47,7 +47,7 @@ func (img *ImageMetaData) String() string {
 
 type CategoryProvider interface {
 	SaveCategory(category CategoryData) error
-	GetCategoryByPiwigoId(id int) (CategoryData, error)
+	GetCategoryByPiwigoId(piwigoId int) (CategoryData, error)
 	GetCategoryByKey(key string) (CategoryData, error)
 	GetCategoriesToCreate() ([]CategoryData, error)
 }
@@ -337,8 +337,38 @@ func (d *LocalDataStore) SaveCategory(category CategoryData) error {
 	return tx.Commit()
 }
 
-func (d *LocalDataStore) GetCategoryByPiwigoId(id int) (CategoryData, error) {
-	panic("implement me")
+func (d *LocalDataStore) GetCategoryByPiwigoId(piwigoId int) (CategoryData, error) {
+	logrus.Tracef("Query category by piwigoid %d", piwigoId)
+	cat := CategoryData{}
+
+	db, err := d.openDatabase()
+	if err != nil {
+		return cat, err
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("SELECT categoryId, piwigoId, piwigoParentId, name, key FROM category WHERE piwigoId = ?")
+	if err != nil {
+		return cat, err
+	}
+
+	rows, err := stmt.Query(piwigoId)
+	if err != nil {
+		return cat, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err = readCategoryFromRow(rows, &cat)
+		if err != nil {
+			return cat, err
+		}
+	} else {
+		return cat, ErrorRecordNotFound
+	}
+	err = rows.Err()
+
+	return cat, err
 }
 
 func (d *LocalDataStore) GetCategoryByKey(key string) (CategoryData, error) {
@@ -376,7 +406,37 @@ func (d *LocalDataStore) GetCategoryByKey(key string) (CategoryData, error) {
 }
 
 func (d *LocalDataStore) GetCategoriesToCreate() ([]CategoryData, error) {
-	panic("implement me")
+	logrus.Trace("Query categories to create on piwigo")
+
+	db, err := d.openDatabase()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("SELECT categoryId, piwigoId, piwigoParentId, name, key FROM category WHERE piwigoId = 0 ORDER BY key")
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := stmt.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var categories []CategoryData
+	for rows.Next() {
+		cat := CategoryData{}
+		err = readCategoryFromRow(rows, &cat)
+		if err != nil {
+			return nil, err
+		}
+		categories = append(categories, cat)
+	}
+	err = rows.Err()
+
+	return categories, err
 }
 
 func (d *LocalDataStore) openDatabase() (*sql.DB, error) {

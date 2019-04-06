@@ -306,6 +306,77 @@ func Test_saveCategory_should_store_records(t *testing.T) {
 	}
 }
 
+func Test_saveCategory_should_update_records(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
+
+	category := getExampleCategoryData("2019")
+
+	saveCategoryShouldNotFail("addcategory", dataStore, category, t)
+	category.CategoryId = 1
+	category.Name = "2019-1"
+	category.Key = category.Name
+	category.PiwigoId = 2
+	category.PiwigoParentId = 3
+
+	saveCategoryShouldNotFail("updatecategory", dataStore, category, t)
+
+	loadedCategory, err := dataStore.GetCategoryByKey(category.Key)
+	if err != nil {
+		t.Fatalf("Could not query category! %s", err)
+	}
+
+	ensureLoadedCategoryIsExpectedCategory(loadedCategory, category, t)
+}
+
+func Test_GetCategoryByPiwigoId_should_return_category(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
+
+	category := getExampleCategoryData("2019")
+
+	saveCategoryShouldNotFail("getCategoryByPiwigoId", dataStore, category, t)
+	category.CategoryId = 1
+
+	loadedCategory, err := dataStore.GetCategoryByPiwigoId(category.PiwigoId)
+	if err != nil {
+		t.Fatalf("Could not query category! %s", err)
+	}
+
+	ensureLoadedCategoryIsExpectedCategory(loadedCategory, category, t)
+}
+
+func Test_GetCategoriesToCreate(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
+
+	category := getExampleCategoryData("2019")
+	category.PiwigoId = 0
+
+	saveCategoryShouldNotFail("getCategoriesToCreate", dataStore, category, t)
+	category.CategoryId = 1
+
+	categories, err := dataStore.GetCategoriesToCreate()
+	if err != nil {
+		t.Fatalf("Could not query category! %s", err)
+	}
+
+	if len(categories) != 1 {
+		t.Error("Did not load categories to create correctly!")
+	}
+
+	ensureLoadedCategoryIsExpectedCategory(categories[0], category, t)
+}
+
 func saveImageShouldNotFail(action string, dataStore *LocalDataStore, img ImageMetaData, t *testing.T) {
 	err := dataStore.SaveImageMetadata(img)
 	if err != nil {
@@ -374,4 +445,19 @@ func setupDatabase(t *testing.T) *LocalDataStore {
 	}
 	dbinitOk = true
 	return dataStore
+}
+
+func ensureLoadedCategoryIsExpectedCategory(loaded CategoryData, expected CategoryData, t *testing.T) {
+	if loaded.Name != expected.Name {
+		t.Errorf("category update failed. Got: %s - want: %s", loaded.Name, expected.Name)
+	}
+	if loaded.Key != expected.Key {
+		t.Errorf("category update failed. Got: %s - want: %s", loaded.Key, expected.Key)
+	}
+	if loaded.PiwigoId != expected.PiwigoId {
+		t.Errorf("category update failed. Got: %d - want: %d", loaded.PiwigoId, expected.PiwigoId)
+	}
+	if loaded.PiwigoParentId != expected.PiwigoParentId {
+		t.Errorf("category update failed. Got: %d - want: %d", loaded.PiwigoParentId, expected.PiwigoParentId)
+	}
 }
