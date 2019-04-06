@@ -7,6 +7,9 @@ package app
 
 import (
 	"flag"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/category"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/images"
+	"git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/localFileStructure"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -32,43 +35,43 @@ func Run() {
 		logErrorAndExit(err, 2)
 	}
 
-	//filesystemNodes, err := localFileStructure.ScanLocalFileStructure(context.localRootPath)
-	//if err != nil {
-	//	logErrorAndExit(err, 3)
-	//}
+	filesystemNodes, err := localFileStructure.ScanLocalFileStructure(context.localRootPath)
+	if err != nil {
+		logErrorAndExit(err, 3)
+	}
 
-	//err = category.SynchronizeCategories(filesystemNodes, context.piwigo, context.dataStore)
-	//if err != nil {
-	//	logErrorAndExit(err, 4)
-	//}
-	//
-	//err = images.SynchronizeLocalImageMetadata(context.dataStore, filesystemNodes, categories, localFileStructure.CalculateFileCheckSums)
-	//if err != nil {
-	//	logErrorAndExit(err, 5)
-	//}
-	//
-	//err = images.SynchronizePiwigoMetadata(context.piwigo, context.dataStore)
-	//if err != nil {
-	//	logErrorAndExit(err, 6)
-	//}
-	//
-	//if *removeImages {
-	//	err = images.DeleteImages(context.piwigo, context.dataStore)
-	//	if err != nil {
-	//		logErrorAndExit(err, 7)
-	//	}
-	//} else {
-	//	logrus.Info("The flag removeImages is disabled. Skipping...")
-	//}
-	//
-	//if !(*noUpload) {
-	//	err = images.UploadImages(context.piwigo, context.dataStore)
-	//	if err != nil {
-	//		logErrorAndExit(err, 8)
-	//	}
-	//} else {
-	//	logrus.Warnln("Skipping upload of images as flag noUpload is set to true!")
-	//}
+	err = category.SynchronizeCategories(filesystemNodes, context.piwigo, context.dataStore)
+	if err != nil {
+		logErrorAndExit(err, 4)
+	}
+
+	err = images.SynchronizeLocalImageMetadata(context.dataStore, context.dataStore, filesystemNodes, localFileStructure.CalculateFileCheckSums)
+	if err != nil {
+		logErrorAndExit(err, 5)
+	}
+
+	err = images.SynchronizePiwigoMetadata(context.piwigo, context.dataStore)
+	if err != nil {
+		logErrorAndExit(err, 6)
+	}
+
+	if *removeImages {
+		err = images.DeleteImages(context.piwigo, context.dataStore)
+		if err != nil {
+			logErrorAndExit(err, 7)
+		}
+	} else {
+		logrus.Info("The flag removeImages is disabled. Skipping...")
+	}
+
+	if !(*noUpload) {
+		err = images.UploadImages(context.piwigo, context.dataStore)
+		if err != nil {
+			logErrorAndExit(err, 8)
+		}
+	} else {
+		logrus.Warnln("Skipping upload of images as flag noUpload is set to true!")
+	}
 
 	_ = context.piwigo.Logout()
 }
