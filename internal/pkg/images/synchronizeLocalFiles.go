@@ -50,7 +50,7 @@ func synchronizeLocalImageMetadataScanNewFiles(fileSystemNodes map[string]*local
 	logrus.Debug("Starting change detection producer")
 	go checkFileForChangesProducer(fileSystemNodes, workQueue, &wg)
 
-	for i := 0; i < runtime.NumCPU()-1; i++ {
+	for i := 0; i < runtime.NumCPU(); i++ {
 		logrus.Debugf("Starting image change detection worker %d", i)
 		wg.Add(1)
 		go checkFileForChangesWorker(workQueue, &wg, imageDb, categoryDb, checksumCalculator)
