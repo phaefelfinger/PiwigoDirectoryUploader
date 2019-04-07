@@ -488,7 +488,7 @@ func (d *LocalDataStore) createTablesIfNeeded(db *sql.DB) error {
 		return err
 	}
 
-	_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS UX_Category_PiwigoId ON category (piwigoId);")
+	_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS UX_Category_PiwigoId ON category (piwigoId) WHERE piwigoId > 0;")
 	if err != nil {
 		return err
 	}

@@ -306,6 +306,34 @@ func Test_saveCategory_should_store_records(t *testing.T) {
 	}
 }
 
+func Test_saveCategory_should_store_multiple_records_with_piwigoid_zero(t *testing.T) {
+	if !dbinitOk {
+		t.Skip("Skipping test as TestDataStoreInitialize failed!")
+	}
+	dataStore := setupDatabase(t)
+	defer cleanupDatabase(t)
+
+	category1 := getExampleCategoryData("2019")
+	category1.PiwigoId = 0
+	category2 := getExampleCategoryData("2020")
+	category2.PiwigoId = 0
+
+	saveCategoryShouldNotFail("addcategory", dataStore, category1, t)
+	category1.CategoryId = 1
+	saveCategoryShouldNotFail("addcategory", dataStore, category2, t)
+	category2.CategoryId = 2
+
+	_, err := dataStore.GetCategoryByKey(category1.Key)
+	if err != nil {
+		t.Fatalf("Could not query category! %s", err)
+	}
+
+	_, err = dataStore.GetCategoryByKey(category2.Key)
+	if err != nil {
+		t.Fatalf("Could not query category! %s", err)
+	}
+}
+
 func Test_saveCategory_should_update_records(t *testing.T) {
 	if !dbinitOk {
 		t.Skip("Skipping test as TestDataStoreInitialize failed!")
