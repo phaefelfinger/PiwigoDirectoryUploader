@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
-	"time"
 )
 
 type fileChecksumCalculator func(filePath string) (string, error)
@@ -76,8 +75,6 @@ func checkFileForChangesWorker(workQueue <-chan localFileStructure.FilesystemNod
 			continue
 		}
 
-		startTime := time.Now()
-
 		metadata, err := imageDb.ImageMetadata(file.Path)
 		if err == datastore.ErrorRecordNotFound {
 			logrus.Debugf("Creating new metadata entry for %s.", file.Path)
@@ -116,10 +113,6 @@ func checkFileForChangesWorker(workQueue <-chan localFileStructure.FilesystemNod
 		if err != nil {
 			logrus.Errorf("Error during save of metadata of %s - %s", file.Path, err)
 		}
-
-		stopTime := time.Now()
-		usedTime := stopTime.Sub(startTime)
-		logrus.Debugf("Processing file %s took %f s", file.Path, usedTime.Seconds())
 	}
 	waitGroup.Done()
 }
