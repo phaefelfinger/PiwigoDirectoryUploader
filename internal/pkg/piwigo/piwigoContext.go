@@ -304,7 +304,7 @@ func (context *PiwigoContext) initializeUploadChunkSize() error {
 	if err != nil {
 		return err
 	}
-	context.chunkSizeInKB = userStatus.Result.UploadFormChunkSize * 1024
+	context.chunkSizeInKB = userStatus.Result.UploadFormChunkSize
 	logrus.Debugf("Got chunksize of %d KB from server.", context.chunkSizeInKB)
 	return nil
 }
