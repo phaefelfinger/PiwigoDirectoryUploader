@@ -23,7 +23,7 @@ const (
 	ImageStateDifferent = 1
 )
 
-func uploadImageChunks(filePath string, context *PiwigoContext, fileSizeInKB int64, md5sum string) error {
+func uploadImageChunks(filePath string, context *ServerContext, fileSizeInKB int64, md5sum string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func uploadImageChunks(filePath string, context *PiwigoContext, fileSizeInKB int
 	return nil
 }
 
-func uploadImageChunk(context *PiwigoContext, base64chunk string, md5sum string, position int64) error {
+func uploadImageChunk(context *ServerContext, base64chunk string, md5sum string, position int64) error {
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.addChunk")
 	formData.Set("data", base64chunk)
@@ -81,7 +81,7 @@ func uploadImageChunk(context *PiwigoContext, base64chunk string, md5sum string,
 	return nil
 }
 
-func uploadImageFinal(context *PiwigoContext, piwigoId int, originalFilename string, md5sum string, categoryId int) (int, error) {
+func uploadImageFinal(context *ServerContext, piwigoId int, originalFilename string, md5sum string, categoryId int) (int, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.add")
 	formData.Set("original_sum", md5sum)

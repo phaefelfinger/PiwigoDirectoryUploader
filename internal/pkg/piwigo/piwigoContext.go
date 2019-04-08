@@ -30,7 +30,7 @@ type PiwigoImageApi interface {
 	DeleteImages(imageIds []int) error
 }
 
-type PiwigoContext struct {
+type ServerContext struct {
 	url           string
 	username      string
 	password      string
@@ -38,7 +38,7 @@ type PiwigoContext struct {
 	cookies       *cookiejar.Jar
 }
 
-func (context *PiwigoContext) Initialize(baseUrl string, username string, password string) error {
+func (context *ServerContext) Initialize(baseUrl string, username string, password string) error {
 	if baseUrl == "" {
 		return errors.New("please provide a valid piwigo server base URL")
 	}
@@ -59,7 +59,7 @@ func (context *PiwigoContext) Initialize(baseUrl string, username string, passwo
 	return nil
 }
 
-func (context *PiwigoContext) Login() error {
+func (context *ServerContext) Login() error {
 	logrus.Infoln("Logging in to piwigo and getting chunk size configuration for uploads")
 	logrus.Debugf("Logging in to %s using user %s", context.url, context.username)
 
@@ -84,7 +84,7 @@ func (context *PiwigoContext) Login() error {
 	return context.initializeUploadChunkSize()
 }
 
-func (context *PiwigoContext) Logout() error {
+func (context *ServerContext) Logout() error {
 	logrus.Debugf("Logging out from %s", context.url)
 
 	formData := url.Values{}
@@ -101,7 +101,7 @@ func (context *PiwigoContext) Logout() error {
 	return nil
 }
 
-func (context *PiwigoContext) getStatus() (*getStatusResponse, error) {
+func (context *ServerContext) getStatus() (*getStatusResponse, error) {
 	logrus.Debugln("Getting current login state...")
 
 	formData := url.Values{}
@@ -118,7 +118,7 @@ func (context *PiwigoContext) getStatus() (*getStatusResponse, error) {
 	return &response, nil
 }
 
-func (context *PiwigoContext) GetAllCategories() (map[string]*Category, error) {
+func (context *ServerContext) GetAllCategories() (map[string]*Category, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.categories.getList")
 	formData.Set("recursive", "true")
@@ -138,7 +138,7 @@ func (context *PiwigoContext) GetAllCategories() (map[string]*Category, error) {
 	return categoryLookups, nil
 }
 
-func (context *PiwigoContext) CreateCategory(parentId int, name string) (int, error) {
+func (context *ServerContext) CreateCategory(parentId int, name string) (int, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.categories.add")
 	formData.Set("name", name)
@@ -159,7 +159,7 @@ func (context *PiwigoContext) CreateCategory(parentId int, name string) (int, er
 	return response.Result.ID, nil
 }
 
-func (context *PiwigoContext) ImageCheckFile(piwigoId int, md5sum string) (int, error) {
+func (context *ServerContext) ImageCheckFile(piwigoId int, md5sum string) (int, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.images.checkFiles")
 	formData.Set("image_id", strconv.Itoa(piwigoId))
@@ -179,7 +179,7 @@ func (context *PiwigoContext) ImageCheckFile(piwigoId int, md5sum string) (int, 
 	return ImageStateDifferent, nil
 }
 
-func (context *PiwigoContext) ImagesExistOnPiwigo(md5sums []string) (map[string]int, error) {
+func (context *ServerContext) ImagesExistOnPiwigo(md5sums []string) (map[string]int, error) {
 	existResults := make(map[string]int, len(md5sums))
 
 	batchSize := 2000
@@ -197,7 +197,7 @@ func (context *PiwigoContext) ImagesExistOnPiwigo(md5sums []string) (map[string]
 	return existResults, nil
 }
 
-func (context *PiwigoContext) imagesExistOnPiwigoBatch(md5sums []string, existResults map[string]int) error {
+func (context *ServerContext) imagesExistOnPiwigoBatch(md5sums []string, existResults map[string]int) error {
 	md5sumList := strings.Join(md5sums, "|")
 
 	formData := url.Values{}
@@ -230,7 +230,7 @@ func (context *PiwigoContext) imagesExistOnPiwigoBatch(md5sums []string, existRe
 	return nil
 }
 
-func (context *PiwigoContext) UploadImage(piwigoId int, filePath string, md5sum string, category int) (int, error) {
+func (context *ServerContext) UploadImage(piwigoId int, filePath string, md5sum string, category int) (int, error) {
 	if context.chunkSizeInKB <= 0 {
 		return 0, errors.New("uploadchunk size is less or equal to zero. 512 is a recommendet value to begin with")
 	}
@@ -256,7 +256,7 @@ func (context *PiwigoContext) UploadImage(piwigoId int, filePath string, md5sum 
 	return imageId, nil
 }
 
-func (context *PiwigoContext) DeleteImages(imageIds []int) error {
+func (context *ServerContext) DeleteImages(imageIds []int) error {
 	logrus.Debug("Entering DeleteImages")
 	defer logrus.Debug("Leaving DeleteImages")
 
@@ -282,7 +282,7 @@ func (context *PiwigoContext) DeleteImages(imageIds []int) error {
 	return context.executePiwigoRequest(formData, &response)
 }
 
-func (context *PiwigoContext) getPiwigoToken() (string, error) {
+func (context *ServerContext) getPiwigoToken() (string, error) {
 	logrus.Debug("Entering getPiwigoToken")
 	defer logrus.Debug("Leaving getPiwigoToken")
 
@@ -298,7 +298,7 @@ func (context *PiwigoContext) getPiwigoToken() (string, error) {
 	return pwgToken, nil
 }
 
-func (context *PiwigoContext) initializeCookieJarIfRequired() {
+func (context *ServerContext) initializeCookieJarIfRequired() {
 	if context.cookies != nil {
 		return
 	}
@@ -308,7 +308,7 @@ func (context *PiwigoContext) initializeCookieJarIfRequired() {
 	context.cookies = jar
 }
 
-func (context *PiwigoContext) initializeUploadChunkSize() error {
+func (context *ServerContext) initializeUploadChunkSize() error {
 	userStatus, err := context.getStatus()
 	if err != nil {
 		return err
@@ -318,7 +318,7 @@ func (context *PiwigoContext) initializeUploadChunkSize() error {
 	return nil
 }
 
-func (context *PiwigoContext) executePiwigoRequest(formData url.Values, decodedResponse responseStatuser) error {
+func (context *ServerContext) executePiwigoRequest(formData url.Values, decodedResponse responseStatuser) error {
 	context.initializeCookieJarIfRequired()
 
 	client := http.Client{Jar: context.cookies}

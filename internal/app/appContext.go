@@ -14,7 +14,7 @@ import (
 
 type appContext struct {
 	// think again if this is a good idea to have such a context!
-	piwigo        *piwigo.PiwigoContext
+	piwigo        *piwigo.ServerContext
 	dataStore     *datastore.LocalDataStore
 	sessionId     string
 	localRootPath string
@@ -45,7 +45,7 @@ func (c *appContext) usePiwigo(url string, user string, password string) error {
 		return errors.New("missing piwigo password")
 	}
 
-	c.piwigo = new(piwigo.PiwigoContext)
+	c.piwigo = new(piwigo.ServerContext)
 	return c.piwigo.Initialize(url, user, password)
 }
 
