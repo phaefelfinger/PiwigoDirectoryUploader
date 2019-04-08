@@ -24,7 +24,7 @@ func Test_deleteImages_should_call_piwigo_and_remove_metadata(t *testing.T) {
 	dbmock.EXPECT().ImageMetadataToDelete().Times(1).Return(images, nil)
 	dbmock.EXPECT().DeleteMarkedImages().Times(1).Return(nil)
 
-	piwigomock := NewMockPiwigoImageApi(mockCtrl)
+	piwigomock := NewMockImageApi(mockCtrl)
 	piwigomock.EXPECT().DeleteImages([]int{5}).Times(1).Return(nil)
 
 	err := DeleteImages(piwigomock, dbmock)
@@ -46,7 +46,7 @@ func Test_deleteImages_should_not_call_piwigo_for_not_uploaded_images_and_remove
 	dbmock.EXPECT().ImageMetadataToDelete().Times(1).Return(images, nil)
 	dbmock.EXPECT().DeleteMarkedImages().Times(1).Return(nil)
 
-	piwigomock := NewMockPiwigoImageApi(mockCtrl)
+	piwigomock := NewMockImageApi(mockCtrl)
 	piwigomock.EXPECT().DeleteImages(gomock.Any()).Times(0)
 
 	err := DeleteImages(piwigomock, dbmock)
@@ -65,7 +65,7 @@ func Test_deleteImages_should_not_call_anything_if_no_images_are_marked_for_dele
 	dbmock.EXPECT().ImageMetadataToDelete().Times(1).Return(images, nil)
 	dbmock.EXPECT().DeleteMarkedImages().Times(0)
 
-	piwigomock := NewMockPiwigoImageApi(mockCtrl)
+	piwigomock := NewMockImageApi(mockCtrl)
 	piwigomock.EXPECT().DeleteImages(gomock.Any()).Times(0)
 
 	err := DeleteImages(piwigomock, dbmock)

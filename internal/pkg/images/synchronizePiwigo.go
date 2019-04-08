@@ -12,7 +12,7 @@ import (
 )
 
 // This method aggregates the check for files with missing piwigoids and if changed files need to be uploaded again.
-func SynchronizePiwigoMetadata(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
+func SynchronizePiwigoMetadata(piwigoCtx piwigo.ImageApi, metadataProvider datastore.ImageMetadataProvider) error {
 	logrus.Debug("Entering SynchronizePiwigoMetadata")
 	defer logrus.Debug("Leaving SynchronizePiwigoMetadata")
 
@@ -32,7 +32,7 @@ func SynchronizePiwigoMetadata(piwigoCtx piwigo.PiwigoImageApi, metadataProvider
 
 // This function calls piwigo and checks if the given md5sum is already present.
 // Only files without a piwigo id are used to query the server.
-func updatePiwigoIdIfAlreadyUploaded(provider datastore.ImageMetadataProvider, piwigoCtx piwigo.PiwigoImageApi) error {
+func updatePiwigoIdIfAlreadyUploaded(provider datastore.ImageMetadataProvider, piwigoCtx piwigo.ImageApi) error {
 	logrus.Info("checking for pending files that are already on piwigo and updating piwigoids...")
 	defer logrus.Info("finshed checking for pending files that are already on piwigo and updating piwigoids...")
 
@@ -80,7 +80,7 @@ func updatePiwigoIdIfAlreadyUploaded(provider datastore.ImageMetadataProvider, p
 }
 
 // Check all images with upload required if they are really changed and need to be uploaded to the server.
-func checkPiwigoForChangedImages(provider datastore.ImageMetadataProvider, piwigoCtx piwigo.PiwigoImageApi) error {
+func checkPiwigoForChangedImages(provider datastore.ImageMetadataProvider, piwigoCtx piwigo.ImageApi) error {
 	logrus.Info("Checking pending files if they really differ from the version in piwigo...")
 	defer logrus.Info("Finished checking pending files if they really differ from the version in piwigo...")
 

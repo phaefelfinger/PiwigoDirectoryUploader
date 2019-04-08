@@ -15,7 +15,7 @@ import (
 	"path/filepath"
 )
 
-func SynchronizeCategories(filesystemNodes map[string]*localFileStructure.FilesystemNode, piwigoApi piwigo.PiwigoCategoryApi, db datastore.CategoryProvider) error {
+func SynchronizeCategories(filesystemNodes map[string]*localFileStructure.FilesystemNode, piwigoApi piwigo.CategoryApi, db datastore.CategoryProvider) error {
 	logrus.Debug("Entering SynchronizeCategories...")
 	defer logrus.Debug("Leaving SynchronizeCategories...")
 
@@ -68,7 +68,7 @@ func addMissingPiwigoCategoriesToLocalDb(db datastore.CategoryProvider, fileSyst
 	return nil
 }
 
-func updatePiwigoCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi, db datastore.CategoryProvider) error {
+func updatePiwigoCategoriesFromServer(piwigoApi piwigo.CategoryApi, db datastore.CategoryProvider) error {
 	logrus.Debug("Entering updatePiwigoCategoriesFromServer")
 	defer logrus.Debug("Leaving updatePiwigoCategoriesFromServer")
 
@@ -106,7 +106,7 @@ func updatePiwigoCategoriesFromServer(piwigoApi piwigo.PiwigoCategoryApi, db dat
 	return nil
 }
 
-func createMissingCategories(piwigoApi piwigo.PiwigoCategoryApi, db datastore.CategoryProvider) error {
+func createMissingCategories(piwigoApi piwigo.CategoryApi, db datastore.CategoryProvider) error {
 	logrus.Debug("Entering createMissingCategories...")
 	defer logrus.Debug("Leaving createMissingCategories...")
 

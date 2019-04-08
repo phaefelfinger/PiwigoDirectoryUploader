@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func DeleteImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider) error {
+func DeleteImages(piwigoCtx piwigo.ImageApi, metadataProvider datastore.ImageMetadataProvider) error {
 	logrus.Debug("Starting deleteImages")
 	defer logrus.Debug("Finished deleteImages successfully")
 

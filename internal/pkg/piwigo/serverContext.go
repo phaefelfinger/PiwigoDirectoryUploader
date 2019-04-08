@@ -18,12 +18,12 @@ import (
 	"strings"
 )
 
-type PiwigoCategoryApi interface {
+type CategoryApi interface {
 	GetAllCategories() (map[string]*Category, error)
 	CreateCategory(parentId int, name string) (int, error)
 }
 
-type PiwigoImageApi interface {
+type ImageApi interface {
 	ImageCheckFile(piwigoId int, md5sum string) (int, error)
 	ImagesExistOnPiwigo(md5sums []string) (map[string]int, error)
 	UploadImage(piwigoId int, filePath string, md5sum string, category int) (int, error)

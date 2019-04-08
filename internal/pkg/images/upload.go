@@ -14,7 +14,7 @@ import (
 
 // Uploads the pending images to the piwigo gallery and assign the category of to the image.
 // Update local metadata and set upload flag to false. Also updates the piwigo image id if there was a difference.
-func UploadImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider, numberOfWorkers int) error {
+func UploadImages(piwigoCtx piwigo.ImageApi, metadataProvider datastore.ImageMetadataProvider, numberOfWorkers int) error {
 	logrus.Debug("Starting uploadImages")
 	defer logrus.Debug("Finished uploadImages successfully")
 
@@ -51,7 +51,7 @@ func UploadImages(piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.Im
 	return nil
 }
 
-func uploadQueueWorker(workQueue <-chan datastore.ImageMetaData, piwigoCtx piwigo.PiwigoImageApi, metadataProvider datastore.ImageMetadataProvider, waitGroup *sync.WaitGroup) {
+func uploadQueueWorker(workQueue <-chan datastore.ImageMetaData, piwigoCtx piwigo.ImageApi, metadataProvider datastore.ImageMetadataProvider, waitGroup *sync.WaitGroup) {
 	for img := range workQueue {
 		logrus.Debugf("%s: uploading image to piwigo", img.FullImagePath)
 

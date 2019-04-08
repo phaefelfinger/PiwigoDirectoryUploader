@@ -26,7 +26,7 @@ func Test_uploadImages_saves_new_id_to_db(t *testing.T) {
 	dbmock.EXPECT().ImageMetadataToUpload().Times(1).Return(images, nil)
 	dbmock.EXPECT().SaveImageMetadata(imgToSave).Times(1)
 
-	piwigomock := NewMockPiwigoImageApi(mockCtrl)
+	piwigomock := NewMockImageApi(mockCtrl)
 	piwigomock.EXPECT().UploadImage(0, "/nonexisting/file.jpg", "1234", 2).Times(1).Return(5, nil)
 
 	err := UploadImages(piwigomock, dbmock, 1)
@@ -49,7 +49,7 @@ func Test_uploadImages_saves_same_id_to_db(t *testing.T) {
 	dbmock.EXPECT().ImageMetadataToUpload().Times(1).Return(images, nil)
 	dbmock.EXPECT().SaveImageMetadata(imgToSave).Times(1)
 
-	piwigomock := NewMockPiwigoImageApi(mockCtrl)
+	piwigomock := NewMockImageApi(mockCtrl)
 	piwigomock.EXPECT().UploadImage(5, "/nonexisting/file.jpg", "1234", 2).Times(1).Return(5, nil)
 
 	err := UploadImages(piwigomock, dbmock, 1)

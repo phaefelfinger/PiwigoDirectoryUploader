@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-//go:generate mockgen -destination=./piwigo_mock_test.go -package=category git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoCategoryApi,PiwigoImageApi
+//go:generate mockgen -destination=./piwigo_mock_test.go -package=category git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo CategoryApi,ImageApi
 //go:generate mockgen -destination=./datastore_mock_test.go -package=category git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore CategoryProvider
 
 func Test_updatePiwigoCategoriesFromServer_adds_new_categories(t *testing.T) {
@@ -31,7 +31,7 @@ func Test_updatePiwigoCategoriesFromServer_adds_new_categories(t *testing.T) {
 		dbmock.EXPECT().SaveCategory(cat).Times(1)
 	}
 
-	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
+	piwigoMock := NewMockCategoryApi(mockCtrl)
 	piwigoMock.EXPECT().GetAllCategories().Return(piwigoCategories, nil).Times(1)
 
 	err := updatePiwigoCategoriesFromServer(piwigoMock, dbmock)
@@ -62,7 +62,7 @@ func Test_updatePiwigoCategoriesFromServer_updates_a_category(t *testing.T) {
 	dbmock.EXPECT().SaveCategory(expectedCategory).Times(1)
 	dbmock.EXPECT().SaveCategory(gomock.Any()).Times(1)
 
-	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
+	piwigoMock := NewMockCategoryApi(mockCtrl)
 	piwigoMock.EXPECT().GetAllCategories().Return(piwigoCategories, nil).Times(1)
 
 	err := updatePiwigoCategoriesFromServer(piwigoMock, dbmock)
@@ -80,7 +80,7 @@ func Test_createMissingCategories_does_not_call_piwigo_if_there_is_no_category_m
 	dbmock := NewMockCategoryProvider(mockCtrl)
 	dbmock.EXPECT().GetCategoriesToCreate().Return(categoriesToCreate, nil).Times(1)
 
-	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
+	piwigoMock := NewMockCategoryApi(mockCtrl)
 	piwigoMock.EXPECT().CreateCategory(gomock.Any(), gomock.Any()).Times(0)
 
 	err := createMissingCategories(piwigoMock, dbmock)
@@ -194,7 +194,7 @@ func Test_createMissingCategories_calls_piwigo_api_and_saves_returned_id(t *test
 	dbmock.EXPECT().GetCategoriesToCreate().Return(categoriesToCreate, nil).Times(1)
 	dbmock.EXPECT().SaveCategory(expectedCategory).Return(nil).Times(1)
 
-	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
+	piwigoMock := NewMockCategoryApi(mockCtrl)
 	piwigoMock.EXPECT().CreateCategory(0, category.Name).Return(1, nil).Times(1)
 
 	err := createMissingCategories(piwigoMock, dbmock)
@@ -288,7 +288,7 @@ func Test_SynchronizeCategories(t *testing.T) {
 	dbmock := NewMockCategoryProvider(mockCtrl)
 	dbmock.EXPECT().GetCategoriesToCreate().Times(1)
 
-	piwigoMock := NewMockPiwigoCategoryApi(mockCtrl)
+	piwigoMock := NewMockCategoryApi(mockCtrl)
 	piwigoMock.EXPECT().GetAllCategories().Times(1)
 
 	err := SynchronizeCategories(fileSystemNodes, piwigoMock, dbmock)
