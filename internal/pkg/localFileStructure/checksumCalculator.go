@@ -22,7 +22,7 @@ func CalculateFileCheckSums(filePath string) (string, error) {
 	defer file.Close()
 
 	hash := md5.New()
-	if _, err := io.Copy(hash, file); err != nil {
+	if _, err = io.Copy(hash, file); err != nil {
 		logrus.Errorf("Could calculate md5 sum of file %s", filePath)
 		return "", err
 	}

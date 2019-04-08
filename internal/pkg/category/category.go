@@ -78,7 +78,8 @@ func updatePiwigoCategoriesFromServer(piwigoApi piwigo.CategoryApi, db datastore
 	}
 
 	for _, pwgCat := range categories {
-		dbCat, err := db.GetCategoryByPiwigoId(pwgCat.Id)
+		var dbCat datastore.CategoryData
+		dbCat, err = db.GetCategoryByPiwigoId(pwgCat.Id)
 		if err == datastore.ErrorRecordNotFound {
 			logrus.Debugf("Adding category %s", pwgCat.Key)
 			dbCat = datastore.CategoryData{
@@ -125,7 +126,8 @@ func createMissingCategories(piwigoApi piwigo.CategoryApi, db datastore.Category
 	for _, category := range missingCategories {
 		logrus.Infof("Creating category %s", category.Key)
 
-		parentId, err := getParentId(category, db)
+		var parentId int
+		parentId, err = getParentId(category, db)
 		if err != nil {
 			return err
 		}

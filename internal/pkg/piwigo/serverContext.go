@@ -217,7 +217,8 @@ func (context *ServerContext) imagesExistOnPiwigoBatch(md5sums []string, existRe
 			logrus.Tracef("Missing file with md5sum: %s", key)
 			existResults[key] = 0
 		} else {
-			piwigoId, err := strconv.Atoi(value)
+			var piwigoId int
+			piwigoId, err = strconv.Atoi(value)
 			if err != nil {
 				logrus.Warnf("could not parse piwigoid of file %s", key)
 				continue
@@ -328,7 +329,7 @@ func (context *ServerContext) executePiwigoRequest(formData url.Values, decodedR
 	}
 	defer response.Body.Close()
 
-	if err := json.NewDecoder(response.Body).Decode(decodedResponse); err != nil {
+	if err = json.NewDecoder(response.Body).Decode(decodedResponse); err != nil {
 		logrus.Errorln(err)
 		return err
 	}

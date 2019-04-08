@@ -83,7 +83,8 @@ func checkFileForChangesWorker(workQueue <-chan localFileStructure.FilesystemNod
 			metadata.FullImagePath = file.Path
 			metadata.CategoryPath = filepath.Dir(file.Key)
 
-			category, err := categoryDb.GetCategoryByKey(metadata.CategoryPath)
+			var category datastore.CategoryData
+			category, err = categoryDb.GetCategoryByKey(metadata.CategoryPath)
 			if err == nil {
 				metadata.CategoryPiwigoId = category.PiwigoId
 			} else {
@@ -127,10 +128,10 @@ func synchronizeLocalImageMetadataFindFilesToDelete(imageDb datastore.ImageMetad
 	}
 
 	for _, img := range images {
-		if _, err := os.Stat(img.FullImagePath); os.IsNotExist(err) {
+		if _, err = os.Stat(img.FullImagePath); os.IsNotExist(err) {
 			img.UploadRequired = false
 			img.DeleteRequired = true
-			err := imageDb.SaveImageMetadata(img)
+			err = imageDb.SaveImageMetadata(img)
 			if err != nil {
 				return err
 			}

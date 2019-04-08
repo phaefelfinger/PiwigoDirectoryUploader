@@ -98,7 +98,8 @@ func checkPiwigoForChangedImages(provider datastore.ImageMetadataProvider, piwig
 		if img.PiwigoId == 0 {
 			continue
 		}
-		state, err := piwigoCtx.ImageCheckFile(img.PiwigoId, img.Md5Sum)
+		var state int
+		state, err = piwigoCtx.ImageCheckFile(img.PiwigoId, img.Md5Sum)
 		if err != nil {
 			logrus.Warnf("Error during file change check of file %s", img.FullImagePath)
 			continue
