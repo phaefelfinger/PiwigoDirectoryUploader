@@ -19,7 +19,7 @@ import (
 )
 
 type PiwigoCategoryApi interface {
-	GetAllCategories() (map[string]*PiwigoCategory, error)
+	GetAllCategories() (map[string]*Category, error)
 	CreateCategory(parentId int, name string) (int, error)
 }
 
@@ -118,7 +118,7 @@ func (context *PiwigoContext) getStatus() (*getStatusResponse, error) {
 	return &response, nil
 }
 
-func (context *PiwigoContext) GetAllCategories() (map[string]*PiwigoCategory, error) {
+func (context *PiwigoContext) GetAllCategories() (map[string]*Category, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.categories.getList")
 	formData.Set("recursive", "true")

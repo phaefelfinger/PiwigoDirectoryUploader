@@ -11,15 +11,15 @@ import (
 	"os"
 )
 
-type PiwigoCategory struct {
+type Category struct {
 	Id       int
 	ParentId int
 	Name     string
 	Key      string
 }
 
-func buildLookupMap(categories map[int]*PiwigoCategory) map[string]*PiwigoCategory {
-	categoryLookups := map[string]*PiwigoCategory{}
+func buildLookupMap(categories map[int]*Category) map[string]*Category {
+	categoryLookups := map[string]*Category{}
 	for _, category := range categories {
 		logrus.Debugf("Loaded existing category %s", category.Key)
 		categoryLookups[category.Key] = category
@@ -27,15 +27,15 @@ func buildLookupMap(categories map[int]*PiwigoCategory) map[string]*PiwigoCatego
 	return categoryLookups
 }
 
-func buildCategoryMap(statusResponse *getCategoryListResponse) map[int]*PiwigoCategory {
-	categories := map[int]*PiwigoCategory{}
+func buildCategoryMap(statusResponse *getCategoryListResponse) map[int]*Category {
+	categories := map[int]*Category{}
 	for _, category := range statusResponse.Result.Categories {
-		categories[category.ID] = &PiwigoCategory{Id: category.ID, ParentId: category.IDUppercat, Name: category.Name, Key: category.Name}
+		categories[category.ID] = &Category{Id: category.ID, ParentId: category.IDUppercat, Name: category.Name, Key: category.Name}
 	}
 	return categories
 }
 
-func buildCategoryKeys(categories map[int]*PiwigoCategory) {
+func buildCategoryKeys(categories map[int]*Category) {
 	for _, category := range categories {
 		if category.ParentId == 0 {
 			category.Key = category.Name
