@@ -186,7 +186,24 @@ func (context *PiwigoContext) ImageCheckFile(piwigoId int, md5sum string) (int, 
 }
 
 func (context *PiwigoContext) ImagesExistOnPiwigo(md5sums []string) (map[string]int, error) {
-	//TODO: make sure to split to multiple queries -> to honor max upload queries
+	existResults := make(map[string]int, len(md5sums))
+
+	batchSize := 2000
+	for i := 0; i < len(md5sums); i += batchSize {
+		j := i + batchSize
+		if j > len(md5sums) {
+			j = len(md5sums)
+		}
+
+		err := context.imagesExistOnPiwigoBatch(md5sums[i:j], existResults)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return existResults, nil
+}
+
+func (context *PiwigoContext) imagesExistOnPiwigoBatch(md5sums []string, existResults map[string]int) error {
 	md5sumList := strings.Join(md5sums, "|")
 
 	formData := url.Values{}
@@ -198,10 +215,8 @@ func (context *PiwigoContext) ImagesExistOnPiwigo(md5sums []string) (map[string]
 	var imageExistResponse imageExistResponse
 	err := context.executePiwigoRequest(formData, &imageExistResponse)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	existResults := make(map[string]int, len(imageExistResponse.Result))
 
 	for key, value := range imageExistResponse.Result {
 		if value == "" {
@@ -218,7 +233,7 @@ func (context *PiwigoContext) ImagesExistOnPiwigo(md5sums []string) (map[string]
 		}
 	}
 
-	return existResults, nil
+	return nil
 }
 
 func (context *PiwigoContext) UploadImage(piwigoId int, filePath string, md5sum string, category int) (int, error) {
