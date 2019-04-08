@@ -29,7 +29,7 @@ func Test_uploadImages_saves_new_id_to_db(t *testing.T) {
 	piwigomock := NewMockPiwigoImageApi(mockCtrl)
 	piwigomock.EXPECT().UploadImage(0, "/nonexisting/file.jpg", "1234", 2).Times(1).Return(5, nil)
 
-	err := UploadImages(piwigomock, dbmock)
+	err := UploadImages(piwigomock, dbmock, 1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -52,7 +52,7 @@ func Test_uploadImages_saves_same_id_to_db(t *testing.T) {
 	piwigomock := NewMockPiwigoImageApi(mockCtrl)
 	piwigomock.EXPECT().UploadImage(5, "/nonexisting/file.jpg", "1234", 2).Times(1).Return(5, nil)
 
-	err := UploadImages(piwigomock, dbmock)
+	err := UploadImages(piwigomock, dbmock, 1)
 	if err != nil {
 		t.Error(err)
 	}

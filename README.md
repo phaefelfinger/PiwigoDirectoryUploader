@@ -11,17 +11,17 @@ Currently the following features are supported
 - Check if an image needs to be uploaded (only md5sum variant currently supported)
 - Upload image and assign it to the album based on the directory structure
 - Upload updated images that changed locally
-- Local metadata storage using sqlite to make change detection easier
+- Local imagemetadata / category storage using sqlite to make change detection easier
 - Rebuild the local metadata database without uploading any pictures. Though, The categories get created!
 - Remove images no longer present (configurable)
+- Uses all CPU Cores to calculate initial metadata
+- Upload 4 files in parallel by default (configurable)
 
 There are some features planned but not ready yet:
 
-- Optimize performance on initial matadata build up.
-- Upload more than one file at a time
 - Fully support files within multiple albums
 - Specify more than one root path to gather images on the local system
-- Storing categories in the local database
+- Rework source to use go modules
 
 ## Build and run the application
 
@@ -102,6 +102,8 @@ Usage of ./PiwigoDirectoryUploader:
         The minimum log level required to write out a log message. (panic,fatal,error,warn,info,debug,trace) (default "info")
   -noUpload
         If set to true, the metadata gets prepared but the upload is not called and the application is exited with code 90
+  -parallelUploads int
+        Set the number of images that get uploaded in parallel. (default 4)
   -piwigoPassword string
         This is password to the given username.
   -piwigoUrl string
