@@ -32,3 +32,5 @@ testImages/
 devconfig.ini
 localstate.db
 /PiwigoDirectoryUploader
+
+*.gz
