@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	ImageStateInvalid   = -1
+	imageStateInvalid   = -1
 	ImageStateUptodate  = 0
 	ImageStateDifferent = 1
 )
@@ -71,11 +71,11 @@ func uploadImageChunk(context *PiwigoContext, base64chunk string, md5sum string,
 
 	logrus.Tracef("Uploading chunk %d of file with sum %s", position, md5sum)
 
-	var uploadChunkResponse uploadChunkResponse
-	err := context.executePiwigoRequest(formData, &uploadChunkResponse)
+	var response uploadChunkResponse
+	err := context.executePiwigoRequest(formData, &response)
 	if err != nil {
-		logrus.Errorf("Got state %s while uploading chunk %d of %s", uploadChunkResponse.Status, position, md5sum)
-		return errors.New(fmt.Sprintf("Got state %s while uploading chunk %d of %s", uploadChunkResponse.Status, position, md5sum))
+		logrus.Errorf("Got state %s while uploading chunk %d of %s", response.Status, position, md5sum)
+		return errors.New(fmt.Sprintf("Got state %s while uploading chunk %d of %s", response.Status, position, md5sum))
 	}
 
 	return nil
@@ -97,12 +97,12 @@ func uploadImageFinal(context *PiwigoContext, piwigoId int, originalFilename str
 
 	logrus.Debugf("Finalizing upload of file %s with sum %s to category %d", originalFilename, md5sum, categoryId)
 
-	var fileAddResponse fileAddResponse
-	err := context.executePiwigoRequest(formData, &fileAddResponse)
+	var response fileAddResponse
+	err := context.executePiwigoRequest(formData, &response)
 	if err != nil {
-		logrus.Errorf("Got state %s while adding image %s", fileAddResponse.Status, originalFilename)
-		return 0, errors.New(fmt.Sprintf("Got state %s while adding image %s", fileAddResponse.Status, originalFilename))
+		logrus.Errorf("Got state %s while adding image %s", response.Status, originalFilename)
+		return 0, errors.New(fmt.Sprintf("Got state %s while adding image %s", response.Status, originalFilename))
 	}
 
-	return fileAddResponse.Result.ImageID, nil
+	return response.Result.ImageID, nil
 }

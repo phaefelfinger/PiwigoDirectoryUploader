@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var ErrorRecordNotFound = errors.New("Record not found")
+var ErrorRecordNotFound = errors.New("record not found")
 
 type CategoryData struct {
 	CategoryId     int
@@ -72,7 +72,7 @@ func NewLocalDataStore() *LocalDataStore {
 
 func (d *LocalDataStore) Initialize(connectionString string) error {
 	if connectionString == "" {
-		return errors.New("connection string could not be empty.")
+		return errors.New("connection string could not be empty")
 	}
 
 	d.connectionString = connectionString
@@ -137,7 +137,7 @@ func (d *LocalDataStore) ImageMetadataAll() ([]ImageMetaData, error) {
 	}
 	defer rows.Close()
 
-	images := []ImageMetaData{}
+	var images []ImageMetaData
 	for rows.Next() {
 		img := &ImageMetaData{}
 		err = readImageMetadataFromRow(rows, img)
@@ -166,7 +166,7 @@ func (d *LocalDataStore) ImageMetadataToDelete() ([]ImageMetaData, error) {
 	}
 	defer rows.Close()
 
-	images := []ImageMetaData{}
+	var images []ImageMetaData
 	for rows.Next() {
 		img := &ImageMetaData{}
 		err = readImageMetadataFromRow(rows, img)
@@ -195,7 +195,7 @@ func (d *LocalDataStore) ImageMetadataToUpload() ([]ImageMetaData, error) {
 	}
 	defer rows.Close()
 
-	images := []ImageMetaData{}
+	var images []ImageMetaData
 	for rows.Next() {
 		img := &ImageMetaData{}
 		err = readImageMetadataFromRow(rows, img)

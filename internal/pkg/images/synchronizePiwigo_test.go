@@ -36,7 +36,7 @@ func Test_checkPiwigoForChangedImages_with_empty_list(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	images := []datastore.ImageMetaData{}
+	var images []datastore.ImageMetaData
 
 	dbmock := NewMockImageMetadataProvider(mockCtrl)
 	dbmock.EXPECT().ImageMetadataToUpload().Return(images, nil)
@@ -106,7 +106,7 @@ func Test_updatePiwigoIdIfAlreadyUploaded_without_images_to_upload(t *testing.T)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	images := []datastore.ImageMetaData{}
+	var images []datastore.ImageMetaData
 
 	dbmock := NewMockImageMetadataProvider(mockCtrl)
 	dbmock.EXPECT().ImageMetadataToUpload().Return(images, nil)

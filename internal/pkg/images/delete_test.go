@@ -59,7 +59,7 @@ func Test_deleteImages_should_not_call_anything_if_no_images_are_marked_for_dele
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	images := []datastore.ImageMetaData{}
+	var images []datastore.ImageMetaData
 
 	dbmock := NewMockImageMetadataProvider(mockCtrl)
 	dbmock.EXPECT().ImageMetadataToDelete().Times(1).Return(images, nil)

@@ -20,9 +20,9 @@ type appContext struct {
 	localRootPath string
 }
 
-func (c *appContext) UseMetadataStore(connectionString string) error {
+func (c *appContext) useMetadataStore(connectionString string) error {
 	if connectionString == "" {
-		return errors.New("missing connectionString to use metadata store!")
+		return errors.New("missing connectionString to use metadata store")
 	}
 
 	logrus.Infof("Using SQL Lite data store with '%s'", connectionString)
@@ -32,17 +32,17 @@ func (c *appContext) UseMetadataStore(connectionString string) error {
 	return err
 }
 
-func (c *appContext) UsePiwigo(url string, user string, password string) error {
+func (c *appContext) usePiwigo(url string, user string, password string) error {
 	if url == "" {
-		return errors.New("missing piwigo url!")
+		return errors.New("missing piwigo url")
 	}
 
 	if user == "" {
-		return errors.New("missing piwigo user!")
+		return errors.New("missing piwigo user")
 	}
 
 	if password == "" {
-		return errors.New("missing piwigo password!")
+		return errors.New("missing piwigo password")
 	}
 
 	c.piwigo = new(piwigo.PiwigoContext)
@@ -56,7 +56,7 @@ func newAppContext() (*appContext, error) {
 	context.localRootPath = *imagesRootPath
 
 	if *sqliteDb != "" {
-		err := context.UseMetadataStore(*sqliteDb)
+		err := context.useMetadataStore(*sqliteDb)
 		if err != nil {
 			return nil, err
 		}
@@ -64,7 +64,7 @@ func newAppContext() (*appContext, error) {
 		logrus.Warnln("No persistence configured. Skipping metadata storage. This might affect performance on large collections!")
 	}
 
-	err := context.UsePiwigo(*piwigoUrl, *piwigoUser, *piwigoPassword)
+	err := context.usePiwigo(*piwigoUrl, *piwigoUser, *piwigoPassword)
 
 	return context, err
 }

@@ -18,12 +18,6 @@ import (
 	"strings"
 )
 
-type PiwigoApi interface {
-	Initialize(baseUrl string, username string, password string, chunkSizeInKB int) error
-	Login() error
-	Logout() error
-}
-
 type PiwigoCategoryApi interface {
 	GetAllCategories() (map[string]*PiwigoCategory, error)
 	CreateCategory(parentId int, name string) (int, error)
@@ -46,7 +40,7 @@ type PiwigoContext struct {
 
 func (context *PiwigoContext) Initialize(baseUrl string, username string, password string) error {
 	if baseUrl == "" {
-		return errors.New("Please provide a valid piwigo server base URL")
+		return errors.New("please provide a valid piwigo server base URL")
 	}
 	_, err := url.Parse(baseUrl)
 	if err != nil {
@@ -54,7 +48,7 @@ func (context *PiwigoContext) Initialize(baseUrl string, username string, passwo
 	}
 
 	if username == "" {
-		return errors.New("Please provide a valid username for the given piwigo server.")
+		return errors.New("please provide a valid username for the given piwigo server")
 	}
 
 	context.url = fmt.Sprintf("%s/ws.php?format=json", baseUrl)
@@ -78,15 +72,15 @@ func (context *PiwigoContext) Login() error {
 	formData.Set("username", context.username)
 	formData.Set("password", context.password)
 
-	var loginResponse loginResponse
-	err := context.executePiwigoRequest(formData, &loginResponse)
+	var response loginResponse
+	err := context.executePiwigoRequest(formData, &response)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Login failed: %d - %s", loginResponse.ErrorNumber, loginResponse.Message)
+		errorMessage := fmt.Sprintf("Login failed: %d - %s", response.ErrorNumber, response.Message)
 		logrus.Errorln(errorMessage)
 		return errors.New(errorMessage)
 	}
 
-	logrus.Infof("Login succeeded: %s", loginResponse.Status)
+	logrus.Infof("Login succeeded: %s", response.Status)
 	return context.initializeUploadChunkSize()
 }
 
@@ -96,8 +90,8 @@ func (context *PiwigoContext) Logout() error {
 	formData := url.Values{}
 	formData.Set("method", "pwg.session.logout")
 
-	var logoutResponse logoutResponse
-	err := context.executePiwigoRequest(formData, &logoutResponse)
+	var response logoutResponse
+	err := context.executePiwigoRequest(formData, &response)
 	if err != nil {
 		logrus.Errorf("Logout from %s failed", context.url)
 		return err
@@ -113,15 +107,15 @@ func (context *PiwigoContext) getStatus() (*getStatusResponse, error) {
 	formData := url.Values{}
 	formData.Set("method", "pwg.session.getStatus")
 
-	var getStatusResponse getStatusResponse
-	err := context.executePiwigoRequest(formData, &getStatusResponse)
+	var response getStatusResponse
+	err := context.executePiwigoRequest(formData, &response)
 	if err != nil {
 		errorMessage := fmt.Sprintln("Could not get session state from server")
 		logrus.Errorln(errorMessage)
 		return nil, errors.New(errorMessage)
 	}
 
-	return &getStatusResponse, nil
+	return &response, nil
 }
 
 func (context *PiwigoContext) GetAllCategories() (map[string]*PiwigoCategory, error) {
@@ -129,15 +123,15 @@ func (context *PiwigoContext) GetAllCategories() (map[string]*PiwigoCategory, er
 	formData.Set("method", "pwg.categories.getList")
 	formData.Set("recursive", "true")
 
-	var getCategoryListResponse getCategoryListResponse
-	err := context.executePiwigoRequest(formData, &getCategoryListResponse)
+	var response getCategoryListResponse
+	err := context.executePiwigoRequest(formData, &response)
 	if err != nil {
 		logrus.Errorf("Got error while loading categories: %s", err)
-		return nil, errors.New("Could not load categories")
+		return nil, errors.New("could not load categories")
 	}
 
 	logrus.Infof("Successfully got all categories")
-	categories := buildCategoryMap(&getCategoryListResponse)
+	categories := buildCategoryMap(&response)
 	buildCategoryKeys(categories)
 	categoryLookups := buildLookupMap(categories)
 
@@ -154,15 +148,15 @@ func (context *PiwigoContext) CreateCategory(parentId int, name string) (int, er
 		formData.Set("parent", fmt.Sprint(parentId))
 	}
 
-	var createCategoryResponse createCategoryResponse
-	err := context.executePiwigoRequest(formData, &createCategoryResponse)
+	var response createCategoryResponse
+	err := context.executePiwigoRequest(formData, &response)
 	if err != nil {
 		logrus.Errorln(err)
 		return 0, err
 	}
 
-	logrus.Infof("Successfully created category %s with id %d", name, createCategoryResponse.Result.ID)
-	return createCategoryResponse.Result.ID, nil
+	logrus.Infof("Successfully created category %s with id %d", name, response.Result.ID)
+	return response.Result.ID, nil
 }
 
 func (context *PiwigoContext) ImageCheckFile(piwigoId int, md5sum string) (int, error) {
@@ -173,13 +167,13 @@ func (context *PiwigoContext) ImageCheckFile(piwigoId int, md5sum string) (int, 
 
 	logrus.Tracef("Checking if file %s - %d needs to be uploaded", md5sum, piwigoId)
 
-	var checkFilesResponse checkFilesResponse
-	err := context.executePiwigoRequest(formData, &checkFilesResponse)
+	var response checkFilesResponse
+	err := context.executePiwigoRequest(formData, &response)
 	if err != nil {
-		return ImageStateInvalid, err
+		return imageStateInvalid, err
 	}
 
-	if checkFilesResponse.Result["file"] == "equals" {
+	if response.Result["file"] == "equals" {
 		return ImageStateUptodate, nil
 	}
 	return ImageStateDifferent, nil
@@ -212,13 +206,13 @@ func (context *PiwigoContext) imagesExistOnPiwigoBatch(md5sums []string, existRe
 
 	logrus.Tracef("Looking up if files exist: %s", md5sumList)
 
-	var imageExistResponse imageExistResponse
-	err := context.executePiwigoRequest(formData, &imageExistResponse)
+	var response imageExistResponse
+	err := context.executePiwigoRequest(formData, &response)
 	if err != nil {
 		return err
 	}
 
-	for key, value := range imageExistResponse.Result {
+	for key, value := range response.Result {
 		if value == "" {
 			logrus.Tracef("Missing file with md5sum: %s", key)
 			existResults[key] = 0
@@ -238,7 +232,7 @@ func (context *PiwigoContext) imagesExistOnPiwigoBatch(md5sums []string, existRe
 
 func (context *PiwigoContext) UploadImage(piwigoId int, filePath string, md5sum string, category int) (int, error) {
 	if context.chunkSizeInKB <= 0 {
-		return 0, errors.New("Uploadchunk size is less or equal to zero. 512 is a recommendet value to begin with.")
+		return 0, errors.New("uploadchunk size is less or equal to zero. 512 is a recommendet value to begin with")
 	}
 
 	fileInfo, err := os.Stat(filePath)
@@ -284,8 +278,8 @@ func (context *PiwigoContext) DeleteImages(imageIds []int) error {
 	formData.Set("image_id", joinedIds)
 	formData.Set("pwg_token", pwgToken)
 
-	var deleteResponse deleteResponse
-	return context.executePiwigoRequest(formData, &deleteResponse)
+	var response deleteResponse
+	return context.executePiwigoRequest(formData, &response)
 }
 
 func (context *PiwigoContext) getPiwigoToken() (string, error) {
@@ -299,7 +293,7 @@ func (context *PiwigoContext) getPiwigoToken() (string, error) {
 	}
 	pwgToken := status.Result.PwgToken
 	if pwgToken == "" {
-		return "", errors.New("Did not get a valid piwigo token. Could not delete the images.")
+		return "", errors.New("did not get a valid piwigo token. Could not delete the images")
 	}
 	return pwgToken, nil
 }

@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-//go:generate mockgen -destination=./piwigo_mock_test.go -package=category git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoApi,PiwigoCategoryApi,PiwigoImageApi
+//go:generate mockgen -destination=./piwigo_mock_test.go -package=category git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/piwigo PiwigoCategoryApi,PiwigoImageApi
 //go:generate mockgen -destination=./datastore_mock_test.go -package=category git.haefelfinger.net/piwigo/PiwigoDirectoryUploader/internal/pkg/datastore CategoryProvider
 
 func Test_updatePiwigoCategoriesFromServer_adds_new_categories(t *testing.T) {
@@ -320,7 +320,7 @@ func createDbSubCategory() datastore.CategoryData {
 	return category
 }
 
-func createDbCategoriesFrom(categories map[string]*piwigo.PiwigoCategory) []datastore.CategoryData {
+func createDbCategoriesFrom(categories map[string]*piwigo.Category) []datastore.CategoryData {
 	var dbCategories []datastore.CategoryData
 	for _, cat := range categories {
 		dbCat := datastore.CategoryData{
@@ -335,20 +335,20 @@ func createDbCategoriesFrom(categories map[string]*piwigo.PiwigoCategory) []data
 	return dbCategories
 }
 
-func createTwoServerCategories() map[string]*piwigo.PiwigoCategory {
-	piwigoCategory1 := piwigo.PiwigoCategory{
+func createTwoServerCategories() map[string]*piwigo.Category {
+	piwigoCategory1 := piwigo.Category{
 		Id:       1,
 		Name:     "2019",
 		Key:      "2019",
 		ParentId: 0,
 	}
-	piwigoCategory2 := piwigo.PiwigoCategory{
+	piwigoCategory2 := piwigo.Category{
 		Id:       2,
 		Name:     "SubCategory",
 		Key:      "2019/SubCategory",
 		ParentId: 1,
 	}
-	piwigoCategories := make(map[string]*piwigo.PiwigoCategory)
+	piwigoCategories := make(map[string]*piwigo.Category)
 	piwigoCategories[piwigoCategory1.Key] = &piwigoCategory1
 	piwigoCategories[piwigoCategory2.Key] = &piwigoCategory2
 	return piwigoCategories
