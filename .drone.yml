@@ -1,5 +1,5 @@
 pipeline:
-  build:
+  buildci:
     image: golang
     commands:
       - go get ./...
@@ -7,9 +7,16 @@ pipeline:
       - go build -o dist/PiwigoDirectoryUploader cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
       - go test -cover ./...
     when:
-      event: [push, tag]
       branch: master
-  
+
+  buildrelease:
+    image: golang
+    commands:
+      - go get ./...
+      - go build -o dist/PiwigoDirectoryUploader cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
+    when:
+      event: tag
+
   publish:
     image: plugins/github-release
     settings:
@@ -22,4 +29,3 @@ pipeline:
       - sha512
     when:
       event: tag
-      branch: master
