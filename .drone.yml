@@ -2,9 +2,9 @@ pipeline:
   build:
     image: golang
     commands:
-      - go get
-      - go build
-      - go test
+      - go get ./...
+      - go build -o dist/PiwigoDirectoryUploader cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
+      - go test ./...
     when:
       event: [push, tag]
       branch: master
