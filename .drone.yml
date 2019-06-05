@@ -1,0 +1,10 @@
+pipeline:
+  build:
+    image: golang
+    commands:
+      - go get
+      - go build
+      - go test
+    when:
+      event: [push, tag]
+      branch: master
