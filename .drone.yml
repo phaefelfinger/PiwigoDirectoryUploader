@@ -3,8 +3,23 @@ pipeline:
     image: golang
     commands:
       - go get ./...
+      - go vet ./...
       - go build -o dist/PiwigoDirectoryUploader cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
-      - go test ./...
+      - go test -cover ./...
     when:
       event: [push, tag]
+      branch: master
+  
+  publish:
+    image: plugins/github-release
+    settings:
+      api_key:
+        from_secret: github_token
+      files: dist/*
+      checksum:
+      - md5
+      - sha256
+      - sha512
+    when:
+      event: tag
       branch: master
