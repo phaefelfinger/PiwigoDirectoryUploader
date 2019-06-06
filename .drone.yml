@@ -13,18 +13,18 @@ steps:
     - apt-get update && apt-get install musl -y --no-install-recommends musl musl-dev musl-tools
     - go get ./...
     - go vet ./...
-    - go build -o dist/PiwigoDirectoryUploader cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
-    - go test -cover ./...
+    - build/build-gcc.sh
     - build/build-musl.sh
+    - go test -cover ./...
   when:
     branch: master
 
 - name: buildrelease
   image: golang
   commands:
-    - apt-get update && apt-get install musl -y --no-install-recommends musl
+    - apt-get update && apt-get install musl -y --no-install-recommends musl musl-dev musl-tools
     - go get ./...
-    - go test -cover ./...
+    - build/build-gcc.sh
     - build/build-musl.sh
   when:
     event: tag
