@@ -10,17 +10,21 @@ steps:
 - name: buildci
   image: golang
   commands:
+    - apt-get update && apt-get install musl -y --no-install-recommends musl musl-dev
     - go get ./...
     - go vet ./...
     - go build -o dist/PiwigoDirectoryUploader cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
     - go test -cover ./...
+    - build/build-musl.sh
   when:
     branch: master
 
 - name: buildrelease
   image: golang
   commands:
+    - apt-get update && apt-get install musl -y --no-install-recommends musl
     - go get ./...
+    - go test -cover ./...
     - build/build-musl.sh
   when:
     event: tag
