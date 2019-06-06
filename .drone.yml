@@ -10,7 +10,7 @@ steps:
 - name: buildci
   image: golang
   commands:
-    - apt-get update && apt-get install musl -y --no-install-recommends musl musl-dev
+    - apt-get update && apt-get install musl -y --no-install-recommends musl musl-dev musl-tools
     - go get ./...
     - go vet ./...
     - go build -o dist/PiwigoDirectoryUploader cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
