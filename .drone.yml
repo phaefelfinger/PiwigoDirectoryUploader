@@ -1,31 +1,26 @@
-pipeline:
-  buildci:
-    image: golang
-    commands:
-      - go get ./...
-      - go vet ./...
-      - go build -o dist/PiwigoDirectoryUploader cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
-      - go test -cover ./...
-    when:
-      branch: master
+kind: pipeline
+name: default
 
-  buildrelease:
-    image: golang
-    commands:
-      - go get ./...
-      - go build -o dist/PiwigoDirectoryUploader cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
-    when:
-      event: tag
+steps:
+- name: fetch
+  image: docker:git
+  commands:
+  - git fetch --tags
 
-  publish:
-    image: plugins/github-release
-    settings:
-      api_key:
-        from_secret: github_token
-      files: dist/*
-      checksum:
-      - md5
-      - sha256
-      - sha512
-    when:
-      event: tag
+- name: buildci
+  image: golang
+  commands:
+    - go get ./...
+    - go vet ./...
+    - go build -o dist/PiwigoDirectoryUploader cmd/PiwigoDirectoryUploader/PiwigoDirectoryUploader.go
+    - go test -cover ./...
+  when:
+    branch: master
+
+- name: buildrelease
+  image: golang
+  commands:
+    - go get ./...
+    - build/build-musl.sh
+  when:
+    event: tag
