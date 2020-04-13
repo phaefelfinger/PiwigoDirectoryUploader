@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Philipp Haefelfinger (http://www.haefelfinger.ch/). All Rights Reserved.
+ * Copyright (C) 2020 Philipp Haefelfinger (http://www.haefelfinger.ch/). All Rights Reserved.
  * This application is licensed under GPLv2. See the LICENSE file in the root directory of the project.
  */
 
@@ -26,10 +26,20 @@ func (n *FilesystemNode) String() string {
 	return fmt.Sprintf("FilesystemNode: %s", n.Path)
 }
 
-func ScanLocalFileStructure(path string) (map[string]*FilesystemNode, error) {
+func ScanLocalFileStructure(path string, extensions []string, ignoreFolders []string) (map[string]*FilesystemNode, error) {
 	fullPathRoot, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
+	}
+
+	ignoredDirectoriesMap := make(map[string]struct{}, len(ignoreFolders))
+	for _, ignoredFolder := range ignoreFolders {
+		ignoredDirectoriesMap[strings.ToLower(ignoredFolder)] = struct{}{}
+	}
+
+	extensionsMap := make(map[string]struct{}, len(extensions))
+	for _, extension := range extensions {
+		extensionsMap["."+strings.ToLower(extension)] = struct{}{}
 	}
 
 	logrus.Infof("Scanning %s for images...", fullPathRoot)
@@ -49,11 +59,19 @@ func ScanLocalFileStructure(path string) (map[string]*FilesystemNode, error) {
 			return nil
 		}
 
+		_, FolderIsIgnored := ignoredDirectoriesMap[strings.ToLower(info.Name())]
+		if FolderIsIgnored && info.IsDir() {
+			logrus.Tracef("Skipping ignored directory %s", path)
+			return filepath.SkipDir
+		}
+
 		extension := strings.ToLower(filepath.Ext(path))
-		if extension != ".jpg" && extension != ".png" && !info.IsDir() {
+		_, extensionSupported := extensionsMap[extension]
+		if !extensionSupported && !info.IsDir() {
 			return nil
 		}
 
+		//TODO: Add code to strip directories at the end of the path (e.g. /rootdir/eventname/png/file.png -> eventname/file.png
 		key := strings.Replace(path, fullPathReplace, "", 1)
 
 		fileMap[path] = &FilesystemNode{

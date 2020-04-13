@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Philipp Haefelfinger (http://www.haefelfinger.ch/). All Rights Reserved.
+ * Copyright (C) 2020 Philipp Haefelfinger (http://www.haefelfinger.ch/). All Rights Reserved.
  * This application is licensed under GPLv2. See the LICENSE file in the root directory of the project.
  */
 
@@ -36,7 +36,12 @@ func Run() {
 		logErrorAndExit(err, 2)
 	}
 
-	filesystemNodes, err := localFileStructure.ScanLocalFileStructure(context.localRootPath)
+	//TODO: make params here as flags
+	supportedExtensions := make([]string, 0)
+	supportedExtensions = append(supportedExtensions, "jpg")
+	supportedExtensions = append(supportedExtensions, "png")
+
+	filesystemNodes, err := localFileStructure.ScanLocalFileStructure(context.localRootPath, supportedExtensions, make([]string,0))
 	if err != nil {
 		logErrorAndExit(err, 3)
 	}
