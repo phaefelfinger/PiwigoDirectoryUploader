@@ -26,20 +26,26 @@ func (n *FilesystemNode) String() string {
 	return fmt.Sprintf("FilesystemNode: %s", n.Path)
 }
 
-func ScanLocalFileStructure(path string, extensions []string, ignoreFolders []string) (map[string]*FilesystemNode, error) {
+func ScanLocalFileStructure(path string, extensions []string, ignoreDirs []string, dirSuffixToSkip int) (map[string]*FilesystemNode, error) {
 	fullPathRoot, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
 	}
 
-	ignoredDirectoriesMap := make(map[string]struct{}, len(ignoreFolders))
-	for _, ignoredFolder := range ignoreFolders {
-		ignoredDirectoriesMap[strings.ToLower(ignoredFolder)] = struct{}{}
+	ignoreDirsMap := make(map[string]struct{}, len(ignoreDirs))
+	for _, ignoredFolder := range ignoreDirs {
+		ignoreDirsMap[strings.ToLower(ignoredFolder)] = struct{}{}
 	}
 
 	extensionsMap := make(map[string]struct{}, len(extensions))
 	for _, extension := range extensions {
 		extensionsMap["."+strings.ToLower(extension)] = struct{}{}
+	}
+
+	if len(extensionsMap) == 0 {
+		logrus.Debug("No extensions specified, adding jpg and png")
+		extensionsMap[".jpg"] = struct{}{}
+		extensionsMap[".png"] = struct{}{}
 	}
 
 	logrus.Infof("Scanning %s for images...", fullPathRoot)
@@ -59,8 +65,8 @@ func ScanLocalFileStructure(path string, extensions []string, ignoreFolders []st
 			return nil
 		}
 
-		_, FolderIsIgnored := ignoredDirectoriesMap[strings.ToLower(info.Name())]
-		if FolderIsIgnored && info.IsDir() {
+		_, dirIgnored := ignoreDirsMap[strings.ToLower(info.Name())]
+		if dirIgnored && info.IsDir() {
 			logrus.Tracef("Skipping ignored directory %s", path)
 			return filepath.SkipDir
 		}
@@ -71,8 +77,7 @@ func ScanLocalFileStructure(path string, extensions []string, ignoreFolders []st
 			return nil
 		}
 
-		//TODO: Add code to strip directories at the end of the path (e.g. /rootdir/eventname/png/file.png -> eventname/file.png
-		key := strings.Replace(path, fullPathReplace, "", 1)
+		key := buildKey(path, info, fullPathReplace, dirSuffixToSkip)
 
 		fileMap[path] = &FilesystemNode{
 			Key:     key,
@@ -98,4 +103,25 @@ func ScanLocalFileStructure(path string, extensions []string, ignoreFolders []st
 	logrus.Infof("Found %d directories and %d images on the local filesystem", numberOfDirectories, numberOfImages)
 
 	return fileMap, nil
+}
+
+func buildKey(path string, info os.FileInfo, fullPathReplace string, dirSuffixToSkip int) string {
+	if info.IsDir() {
+		return trimPathForKey(path, fullPathReplace, dirSuffixToSkip)
+	}
+	fileName := filepath.Base(path)
+	directoryName := filepath.Dir(path)
+	cleanDir := trimPathForKey(directoryName, fullPathReplace, dirSuffixToSkip)
+	return filepath.Join(cleanDir, fileName)
+}
+
+func trimPathForKey(path string, fullPathReplace string, dirSuffixToSkip int) string {
+	trimmedPath := strings.Replace(path, fullPathReplace, "", 1)
+	for i := 0; i < dirSuffixToSkip; i++ {
+		trimmedPath = filepath.Clean(strings.TrimSuffix(trimmedPath, filepath.Base(trimmedPath)))
+	}
+	if trimmedPath == "." {
+		return "root"
+	}
+	return trimmedPath
 }
