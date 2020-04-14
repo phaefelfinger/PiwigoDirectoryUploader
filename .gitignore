@@ -36,3 +36,4 @@ localstate.db
 *.gz
 
 .directory
+/dist/*
