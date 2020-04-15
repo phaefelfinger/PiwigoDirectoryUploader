@@ -29,7 +29,9 @@ _testmain.go
 
 # ignore local test data and folders
 testImages/
+testImages2/
 devconfig.ini
+devconfig2.ini
 localstate.db
 /PiwigoDirectoryUploader
 
