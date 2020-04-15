@@ -46,7 +46,7 @@ func Test_ScanLocalFileStructure_should_find_testfile_with_trimmed_folder(t *tes
 	}
 
 	containsTestImage := false
-	containsFolder := true
+	containsFolder := false
 	for _, img := range images {
 		if img.Name == "testimage.jpg" && img.Key == "root/testimage.jpg" && !img.IsDir {
 			containsTestImage = true
@@ -61,7 +61,7 @@ func Test_ScanLocalFileStructure_should_find_testfile_with_trimmed_folder(t *tes
 		t.Errorf("Did not find the expected testimage.")
 	}
 	if !containsFolder {
-		t.Errorf("Did not find the expected test folder.")
+		t.Errorf("There should be a virtual 'root' folder present.")
 	}
 
 }

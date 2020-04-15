@@ -82,7 +82,7 @@ func ScanLocalFileStructure(path string, extensions []string, ignoreDirs []strin
 		fileMap[path] = &FilesystemNode{
 			Key:     key,
 			Path:    path,
-			Name:    info.Name(),
+			Name:    filepath.Base(key),
 			IsDir:   info.IsDir(),
 			ModTime: info.ModTime(),
 		}
