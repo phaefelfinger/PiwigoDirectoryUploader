@@ -62,6 +62,9 @@ func ScanLocalFileStructure(path string, extensions []string, ignoreDirs []strin
 
 		if strings.HasPrefix(info.Name(), ".") {
 			logrus.Tracef("Skipping hidden file or directory %s", path)
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
